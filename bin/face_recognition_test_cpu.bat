@@ -1,0 +1,1 @@
+.\cpu\dnn_face_recognition_ex.exe --test
