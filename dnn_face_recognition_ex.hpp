@@ -258,7 +258,7 @@ inline std::string face_recognition(cv::Mat& face_image, frontal_face_detector d
 		matrix<float, 0, 1> face_descriptor = mean(mat(net(jitter_image(faces[0]))));
 		//cout << "jittered face descriptor for one face: " << trans(face_descriptor) << endl;
 
-		std::vector<float> v;
+		std::vector<float> v(face_descriptor.begin(), face_descriptor.end());
 		//{
 		//	auto t = face_descriptor;
 		//	for (int i = 0; i < t.nc(); i++)
@@ -269,13 +269,13 @@ inline std::string face_recognition(cv::Mat& face_image, frontal_face_detector d
 		//		}
 		//	}
 		//}
-		{
-			auto& t = face_descriptor;
-			for (int i = 0; i < t.size(); i++)
-			{
-				v.push_back(t(i));
-			}
-		}
+		//{
+		//	auto& t = face_descriptor;
+		//	for (int i = 0; i < t.size(); i++)
+		//	{
+		//		v.push_back(t(i));
+		//	}
+		//}
 
 		printf(" shapevalue_list.size()=%d\n", shapevalue_list.size());
 
