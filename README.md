@@ -1,5 +1,11 @@
 # dnn_face_recognition_ex
 
+## requirements
+**Visual Studio 2017** or higher is required to build.
+[CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive) is required for calculation using GPU.
+also needs [cuDNN v8.0.2 (July 24th, 2020), for CUDA 10.2](https://developer.nvidia.com/cudnn)
+
+
 ## start  
 Place the photo of the person you want to authenticate in **images**.  
 
