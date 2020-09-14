@@ -17,4 +17,4 @@ Execute **step1_step3.bat**
 A list of feature vectors (shapelist.txt) for each subject to be authenticated is generated.  
 
 ## step4
-Use ** step4_face_recognition_cpu.bat ** or ** step4_face_recognition_cuda.bat ** to identify the person on your webcam or USB camera.  
+Use **step4_face_recognition_cpu.bat** or **step4_face_recognition_cuda.bat** to identify the person on your webcam or USB camera.  
