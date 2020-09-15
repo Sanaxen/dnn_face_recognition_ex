@@ -3,6 +3,7 @@
 ## requirements
 **Visual Studio 2017** or higher is required to build.  
 
+- **dlib-19.21** or higher is required
 - **OpenCV-3.4.1** or higher is required
 - You need **libpng.lib, libjpeg.lib**, which will be in **Anaconda3\Library\lib** if you have Anaconda3 installed.
 
