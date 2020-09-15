@@ -230,7 +230,7 @@ int main(int argc, char** argv) try
 			std::string user_name = face_recognition(face_image, detector, sp, net, shapelist, shapevalue_list, dist, cos_dist);
 			shapevalue_list[i] = org;
 			printf("user %s\n", user_name.c_str());
-			fprintf(fp, ",%s,%f,%f%%,%d\n", getUserName(user_name.c_str()).c_str(), dist, (1.0-cos_dist)*100.0, getUserName(shapelist[i].c_str()) == getUserName(user_name.c_str())?1:0);
+			fprintf(fp, ",%s,%f,%f,%d\n", getUserName(user_name.c_str()).c_str(), dist, cos_dist, getUserName(shapelist[i].c_str()) == getUserName(user_name.c_str())?1:0);
 
 			if (user_name != "" && user_name != "unknown")
 			{
