@@ -16,6 +16,8 @@
 #include "opencv2/features2d/features2d.hpp"
 
 #include "putText_Jpn/putText_Jpn.h"
+
+
 using namespace dlib;
 using namespace std;
 
@@ -49,6 +51,7 @@ using anet_type = loss_metric<fc_no_bias<128, avg_pool_everything<
 
 // ----------------------------------------------------------------------------------------
 
+
 inline std::string getFilename(const char* name, std::string& pathname, std::string& extname)
 {
 	std::string fullpath = std::string(name);
@@ -64,6 +67,31 @@ inline std::string getFilename(std::string& name, std::string& pathname, std::st
 {
 	return getFilename(name.c_str(), pathname, extname);
 }
+
+inline std::string getUserName(const char* name)
+{
+	std::string pathname;
+	std::string extname;
+	std::string& fname = getFilename(name, pathname, extname);
+
+	char _name[256];
+	strcpy(_name, fname.c_str());
+
+	char* p = _name;
+	int n = strlen(p);
+	if ( n <= 1)return std::string(_name);
+
+	for (int i = n - 1; i >= 0; i--)
+	{
+		if (p[i] == '_')
+		{
+			p[i] = '\0';
+			break;
+		}
+	}
+	return std::string(_name);
+}
+
 inline void _putText(cv::Mat& img, const cv::String& text, const cv::Point& org, const char* fontname, double fontScale, cv::Scalar color)
 {
 	int fontSize = (int)(10 * fontScale); // 10‚Í“K“–
@@ -166,6 +194,7 @@ inline int get_shapelist(std::vector<std::string>& shapelist)
 	{
 		char* p = strchr(buf, '\n');
 		if (p) *p = '\0';
+		if (buf[0] == '\0') continue;
 		shapelist.push_back("user_shape\\" + std::string(buf));
 	}
 	fclose(fp);
@@ -201,30 +230,76 @@ inline std::vector<std::vector<float>> get_shapevalue_list(const std::vector<std
 	return shapevalue_list;
 }
 
-inline std::string face_recognition(cv::Mat& face_image, frontal_face_detector detector, shape_predictor sp, anet_type net, std::vector<std::string>& shapelist, std::vector<std::vector<float>>& shapevalue_list)
+inline int load_shapelist(std::vector<std::string>& shapelist, std::vector<std::vector<float>>& shapevalue_list)
+{
+	if (shapelist.size() == 0)
+	{
+		if (!get_shapelist(shapelist)) return -1;
+
+		printf("target users=%d\n", shapelist.size());
+	}
+
+	if (shapevalue_list.size() == 0)
+	{
+		printf("loading[shape features]...");
+		shapevalue_list = get_shapevalue_list(shapelist);
+		printf("number of users=%d\n", shapevalue_list.size());
+	}
+	return 0;
+}
+
+
+inline float distance(std::vector<float>& v1, std::vector<float>& v2, float& cos_dist)
+{
+	cos_dist = 0.0;
+	float s = 0.0;
+	for (int j = 0; j < 128; j++)
+	{
+		s += (v1[j] - v2[j])*(v1[j] - v2[j]);
+		cos_dist += v1[j] * v2[j];
+	}
+	return s;
+}
+
+inline float distance(std::vector<float>& v, std::vector<std::vector<float>>& shapevalue_list, int& id, float& cos_dist)
+{
+	float mindist = 9999999999.0;
+	id = -1;
+
+	const size_t sz = shapevalue_list.size();
+
+	std::vector<float> dist(sz);
+	std::vector<float> cos_dst(sz);
+#pragma omp parallel for
+	for (int i = 0; i < sz; i++)
+	{
+		dist[i] = distance(v, shapevalue_list[i], cos_dst[i]);
+	}
+
+	for (int i = 0; i < sz; i++)
+	{
+		if (dist[i] < mindist)
+		{
+			mindist = dist[i];
+			cos_dist = cos_dst[i];
+			id = i;
+		}
+	}
+	return mindist;
+}
+
+inline std::string face_recognition(cv::Mat& face_image, frontal_face_detector detector, shape_predictor sp, anet_type net, std::vector<std::string>& shapelist, std::vector<std::vector<float>>& shapevalue_list, float& dist, float& cos_dist)
 {
 	try
 	{
 		if (shapelist.size() == 0)
 		{
-			FILE* fp = fopen("shapelist.txt", "r");
-			if (!fp)
+			if (load_shapelist(shapelist, shapevalue_list) != 0)
 			{
-				printf("shapelist.txt open error");
 				return "unknown";
 			}
-
-			if (!get_shapelist(shapelist)) return "unknown";
-
-			printf("target users=%d\n", shapelist.size());
 		}
 
-		if (shapevalue_list.size() == 0)
-		{
-			printf("loading[shape features]...");
-			shapevalue_list = get_shapevalue_list(shapelist);
-			printf("number of users=%d\n", shapevalue_list.size());
-		}
 
 		if (face_image.empty() == true) {
 			cout << "No image!" << endl;
@@ -279,23 +354,24 @@ inline std::string face_recognition(cv::Mat& face_image, frontal_face_detector d
 
 		printf(" shapevalue_list.size()=%d\n", shapevalue_list.size());
 
-		float mindist = 9999999999.0;
 		int id = -1;
-		for (int i = 0; i < shapevalue_list.size(); i++)
-		{
-			float s = 0.0;
-			for (int j = 0; j < 128; j++)
-			{
-				s += (v[j] - shapevalue_list[i][j])*(v[j] - shapevalue_list[i][j]);
-			}
-			//printf("  (%d)%f\n", i, s);
-			if (s < mindist)
-			{
-				mindist = s;
-				id = i;
-			}
-		}
+		float mindist = distance(v, shapevalue_list, id, cos_dist);
+		//for (int i = 0; i < shapevalue_list.size(); i++)
+		//{
+		//	float s = 0.0;
+		//	for (int j = 0; j < 128; j++)
+		//	{
+		//		s += (v[j] - shapevalue_list[i][j])*(v[j] - shapevalue_list[i][j]);
+		//	}
+		//	//printf("  (%d)%f\n", i, s);
+		//	if (s < mindist)
+		//	{
+		//		mindist = s;
+		//		id = i;
+		//	}
+		//}
 		printf("%f\n", mindist);
+		dist = mindist;
 
 		if (id >= 0)
 		{
@@ -312,7 +388,7 @@ inline std::string face_recognition(cv::Mat& face_image, frontal_face_detector d
 	}
 }
 
-inline std::string webcam_face_recognition(frontal_face_detector detector, shape_predictor sp, anet_type net, int camID = 0)
+inline std::string webcam_face_recognition(frontal_face_detector detector, shape_predictor sp, anet_type net, std::vector<std::string>& shapelist, std::vector<std::vector<float>>& shapevalue_list, int camID = 0)
 {
 	try
 	{
@@ -322,22 +398,14 @@ inline std::string webcam_face_recognition(frontal_face_detector detector, shape
 			cerr << "Unable to connect to camera" << endl;
 			return "unknown";
 		}
-
-		FILE* fp = fopen("shapelist.txt", "r");
-		if (!fp)
+		if (shapelist.size() == 0)
 		{
-			cerr << "shapelist.txt open error" << endl;
-			return "unknown";
+			if (load_shapelist(shapelist, shapevalue_list) != 0)
+			{
+				return "unknown";
+			}
 		}
 
-		std::vector<std::string> shapelist;
-		if (!get_shapelist(shapelist)) return "unknown";
-
-		printf("target users=%d\n", shapelist.size());
-
-		printf("loading[shape features]...");
-		std::vector<std::vector<float>>& shapevalue_list = get_shapevalue_list(shapelist);
-		printf("number of users%d\n", shapevalue_list.size());
 
 		int wait_time = 20;
 		int count = 0;
@@ -363,7 +431,9 @@ inline std::string webcam_face_recognition(frontal_face_detector detector, shape
 				continue;
 			}
 
-			std::string user = face_recognition(temp, detector, sp, net, shapelist, shapevalue_list);
+			float dist;
+			float cos_dist;
+			std::string user = face_recognition(temp, detector, sp, net, shapelist, shapevalue_list, dist, cos_dist);
 
 			if (user == "")
 			{
@@ -390,7 +460,17 @@ inline std::string webcam_face_recognition(int camID = 0)
 		anet_type net;
 		deserialize("db\\dlib_face_recognition_resnet_model_v1.dat") >> net;
 
-		webcam_face_recognition(detector, sp, net, camID);
+		std::vector<std::string> shapelist;
+		std::vector<std::vector<float>> shapevalue_list;
+		if (shapelist.size() == 0)
+		{
+			if (load_shapelist(shapelist, shapevalue_list) != 0)
+			{
+				return "unknown";
+			}
+		}
+
+		webcam_face_recognition(detector, sp, net, shapelist, shapevalue_list, camID);
 	}
 	catch (...)
 	{

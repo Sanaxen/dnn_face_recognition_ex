@@ -29,6 +29,16 @@ int main(int argc, char** argv) try
 		return -1;
 	}
 
+	int camID = 0;
+	if (argc >= 3)
+	{
+		if (std::string(argv[2]) == "--camID")
+		{
+			camID = atoi(argv[2]);
+		}
+	}
+	printf("camID= %d\n", camID);
+
 	if (std::string(argv[1]) == "--m")
 	{
 		printf("%d\n", make_shape());
@@ -43,15 +53,26 @@ int main(int argc, char** argv) try
 		anet_type net;
 		deserialize("db\\dlib_face_recognition_resnet_model_v1.dat") >> net;
 
+		std::vector<std::string> shapelist;
+		std::vector<std::vector<float>> shapevalue_list;
+		if (shapelist.size() == 0)
+		{
+			if (load_shapelist(shapelist, shapevalue_list) != 0)
+			{
+				return -1;
+			}
+		}
+
 		do {
-			std::string user_name = webcam_face_recognition(detector, sp, net, 0);
+			
+			std::string& user_name = webcam_face_recognition(detector, sp, net, shapelist, shapevalue_list, camID);
 			printf("user %s\n", user_name.c_str());
 
 			if (user_name != "" && user_name != "unknown")
 			{
 				std::string pathname;
 				std::string extname;
-				std::string filename = getFilename(user_name, pathname, extname);
+				std::string& filename = getFilename(user_name, pathname, extname);
 
 				std::string img = "images\\" + filename + ".png";
 				try
@@ -92,14 +113,16 @@ int main(int argc, char** argv) try
 		std::vector<std::string> shapelist;
 		std::vector<std::vector<float>> shapevalue_list;
 
-		std::string user_name = face_recognition(face_image, detector, sp, net, shapelist, shapevalue_list);
+		float dist;
+		float cos_dist;
+		std::string user_name = face_recognition(face_image, detector, sp, net, shapelist, shapevalue_list, dist, cos_dist);
 		printf("user %s\n", user_name.c_str());
 
 		if (user_name != "" && user_name != "unknown")
 		{
 			std::string pathname;
 			std::string extname;
-			std::string filename = getFilename(user_name, pathname, extname);
+			std::string& filename = getFilename(user_name, pathname, extname);
 
 			std::string img = "images\\" + filename + ".png";
 			try
@@ -136,30 +159,24 @@ int main(int argc, char** argv) try
 		std::vector<std::string> shapelist;
 		std::vector<std::vector<float>> shapevalue_list;
 
+		if (shapelist.size() == 0)
 		{
-			FILE* fp = fopen("shapelist.txt", "r");
-			if (!fp)
+			if (load_shapelist(shapelist, shapevalue_list) != 0)
 			{
-				printf("shapelist.txt open error");
 				return -1;
 			}
-
-			if (!get_shapelist(shapelist)) return -1;
-
-			printf("target users=%d\n", shapelist.size());
-
-			printf("loading[shape features]...");
-			shapevalue_list = get_shapevalue_list(shapelist);
-			printf("number of users=%d\n", shapevalue_list.size());
 		}
 
 		FILE* fp = fopen("test.csv", "w");
-		fprintf(fp, "face,predict\n");
+		fprintf(fp, "face,predict,dist,cos_dist\n");
+
+		int ok = 0;
+		printf("shapelist=%d\n", shapelist.size());
 		for (int i = 0; i < shapelist.size(); i++)
 		{
 			std::string pathname;
 			std::string extname;
-			std::string filename = getFilename(shapelist[i], pathname, extname);
+			std::string& filename = getFilename(shapelist[i], pathname, extname);
 
 			cv::Mat face_image;
 			std::string img = "images\\" + filename + ".png";
@@ -181,16 +198,49 @@ int main(int argc, char** argv) try
 				continue;
 			}
 
-			fprintf(fp, "%s", shapelist[i].c_str());
-			std::string user_name = face_recognition(face_image, detector, sp, net, shapelist, shapevalue_list);
+			printf("user %s\n", shapelist[i].c_str()); fflush(stdout);
+			//fprintf(fp, "%s", shapelist[i].c_str());
+			fprintf(fp, "%s", getUserName(shapelist[i].c_str()).c_str());
+
+			std::vector<float> org(shapevalue_list[i].size());
+			std::vector<float> del(shapevalue_list[i].size());
+			org = shapevalue_list[i];
+
+			if (i > 0)
+			{
+				std::string a = getUserName(shapelist[i - 1].c_str());
+				std::string b = getUserName(shapelist[i].c_str());
+				if (a == b)
+				{
+					shapevalue_list[i] = del;
+				}
+				if (i < shapelist.size() - 1)
+				{
+					std::string c = getUserName(shapelist[i + 1].c_str());
+					if (b == c)
+					{
+						shapevalue_list[i] = del;
+					}
+				}
+			}
+			cv::destroyWindow("-");
+
+			float dist;
+			float cos_dist;
+			std::string user_name = face_recognition(face_image, detector, sp, net, shapelist, shapevalue_list, dist, cos_dist);
+			shapevalue_list[i] = org;
 			printf("user %s\n", user_name.c_str());
-			fprintf(fp, ",%s\n", user_name.c_str());
+			fprintf(fp, ",%s,%f,%f%%,%d\n", getUserName(user_name.c_str()).c_str(), dist, (1.0-cos_dist)*100.0, getUserName(shapelist[i].c_str()) == getUserName(user_name.c_str())?1:0);
 
 			if (user_name != "" && user_name != "unknown")
 			{
+				if (getUserName(shapelist[i].c_str()) == getUserName(user_name.c_str()))
+				{
+					ok++;
+				}
 				std::string pathname;
 				std::string extname;
-				std::string filename = getFilename(user_name, pathname, extname);
+				std::string& filename = getFilename(user_name, pathname, extname);
 
 				std::string img = "images\\" + filename + ".png";
 				auto user = cv::imread(img);
@@ -203,12 +253,14 @@ int main(int argc, char** argv) try
 				{
 					sc::myCV::putText_Jpn(user, (filename + "‚³‚ñ‚Å‚·").c_str(), cv::Point(10, 90), std::string("‚l‚r ƒSƒVƒbƒN").c_str(), 0.5, cv::Scalar(200, 0, 0), 3);
 
-					cv::imshow(filename, user);
+					cv::imshow("-", user);
 					cv::waitKey(10);
 				}
 			}
 			//cin.get();
+			printf("%d/%d (%.3f)\n", ok, shapelist.size(), 100.0*(float)ok / (float)shapelist.size());
 		}
+		fprintf(fp, "%d,%d,%f\n", shapelist.size(), ok, 0);
 		fclose(fp);
 		exit(0);
 	}

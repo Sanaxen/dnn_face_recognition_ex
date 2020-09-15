@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
+    <ProjectConfiguration Include="ReleaseMKL|x64">
+      <Configuration>ReleaseMKL</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="ReleaseCUDA|x64">
@@ -11,14 +11,6 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="MinSizeRel|x64">
-      <Configuration>MinSizeRel</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="RelWithDebInfo|x64">
-      <Configuration>RelWithDebInfo</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -31,12 +23,13 @@
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
+    <UseIntelMKL>No</UseIntelMKL>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
@@ -48,16 +41,6 @@
     <PlatformToolset>v141</PlatformToolset>
     <UseIntelMKL>No</UseIntelMKL>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
-  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -67,79 +50,28 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">dnn_face_recognition_ex.dir\Debug\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">dnn_face_recognition_ex</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'">bin\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseCUDA|x64'">bin\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">dnn_face_recognition_ex.dir\Release\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'">dnn_face_recognition_ex.dir\Release\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseCUDA|x64'">dnn_face_recognition_ex.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">dnn_face_recognition_ex</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'">dnn_face_recognition_ex_MKL</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseCUDA|x64'">dnn_face_recognition_ex</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'">.exe</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseCUDA|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseCUDA|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'">true</GenerateManifest>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='ReleaseCUDA|x64'">true</GenerateManifest>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">dnn_face_recognition_ex.dir\MinSizeRel\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">dnn_face_recognition_ex</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">dnn_face_recognition_ex.dir\RelWithDebInfo\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">dnn_face_recognition_ex</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <AdditionalOptions>%(AdditionalOptions) /bigobj /bigobj</AdditionalOptions>
-      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <CompileAs>CompileAsCpp</CompileAs>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
-      <Optimization>Disabled</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;ENABLE_ASSERTS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;ENABLE_ASSERTS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ResourceCompile>
-    <Midl>
-      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
-      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
-    </Midl>
-    <Link>
-      <AdditionalDependencies>dlib_build\Debug\dlib.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;C:\Users\neutral\Anaconda3\Library\lib\libpng.lib;C:\Users\neutral\Anaconda3\Library\lib\jpeg.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
-      <GenerateDebugInformation>Debug</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <SubSystem>Console</SubSystem>
-      <Version>
-      </Version>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\dev\opencv-3.4.1\build\include;C:\dev\opencv-3.4.1\build\include\opencv;C:\dev\dlib\cpu\include;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\opencv-3.4.1\build\include;C:\dev\opencv-3.4.1\build\include\opencv;C:\dev\dlib\no_option\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /bigobj /bigobj</AdditionalOptions>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -167,10 +99,55 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>dlib19.21.0_release_64bit_msvc1916.lib;C:\dev\opencv-3.4.1\build\x64\vc15\lib\opencv_world341.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;D:\Users\bccat\Anaconda3\Library\lib\libpng.lib;D:\Users\bccat\Anaconda3\Library\lib\jpeg.lib;kernel32.lib;user32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_lp64.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_core.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_thread.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\compiler\lib\intel64\libiomp5md.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cublas.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cudnn.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\curand.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cusolver.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cudart.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\dev\dlib\cpu\\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dlib19.21.0_release_64bit_msvc1916.lib;C:\dev\opencv-3.4.1\build\x64\vc15\lib\opencv_world341.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;D:\Users\bccat\Anaconda3\Library\lib\libpng.lib;D:\Users\bccat\Anaconda3\Library\lib\jpeg.lib;kernel32.lib;user32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\dev\dlib\no_option\\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>No</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <SubSystem>Console</SubSystem>
+      <Version>
+      </Version>
+      <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
+      <OutputFile>$(OutDir)cpu\$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseMKL|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\dev\opencv-3.4.1\build\include;C:\dev\opencv-3.4.1\build\include\opencv;C:\dev\dlib\blas\include;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;NDEBUG;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;NDEBUG;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Midl>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>dlib19.21.0_release_64bit_msvc1916.lib;C:\dev\opencv-3.4.1\build\x64\vc15\lib\opencv_world341.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;D:\Users\bccat\Anaconda3\Library\lib\libpng.lib;D:\Users\bccat\Anaconda3\Library\lib\jpeg.lib;kernel32.lib;user32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_lp64.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_core.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_thread.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\compiler\lib\intel64\libiomp5md.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\dev\dlib\blas\\lib</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -212,8 +189,8 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>dlib19.21.0_release_64bit_msvc1916.lib;C:\dev\opencv-3.4.1\build\x64\vc15\lib\opencv_world341.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;D:\Users\bccat\Anaconda3\Library\lib\libpng.lib;D:\Users\bccat\Anaconda3\Library\lib\jpeg.lib;kernel32.lib;user32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_lp64.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_core.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_thread.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\compiler\lib\intel64\libiomp5md.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cublas.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cudnn.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\curand.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cusolver.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cudart.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\dev\dlib\cuda10.2\\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dlib19.21.0_release_64bit_msvc1916.lib;C:\dev\opencv-3.4.1\build\x64\vc15\lib\opencv_world341.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;D:\Users\bccat\Anaconda3\Library\lib\libpng.lib;D:\Users\bccat\Anaconda3\Library\lib\libjpeg.lib;kernel32.lib;user32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_lp64.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_core.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl\lib\intel64\mkl_intel_thread.lib;C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\compiler\lib\intel64\libiomp5md.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cublas.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cudnn.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\curand.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cusolver.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\lib\x64\cudart.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\dev\dlib\cuda10.2\\lib;..\libs\Anaconda3\Library\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -222,89 +199,6 @@
       </Version>
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
       <OutputFile>$(OutDir)cuda\$(TargetName)$(TargetExt)</OutputFile>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
-    <ClCompile>
-      <AdditionalOptions>%(AdditionalOptions) /bigobj /bigobj</AdditionalOptions>
-      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
-      <CompileAs>CompileAsCpp</CompileAs>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <Optimization>MinSpace</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;NDEBUG;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;NDEBUG;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ResourceCompile>
-    <Midl>
-      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
-      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
-    </Midl>
-    <Link>
-      <AdditionalDependencies>dlib_build\MinSizeRel\dlib.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;C:\Users\neutral\Anaconda3\Library\lib\libpng.lib;C:\Users\neutral\Anaconda3\Library\lib\jpeg.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
-      <GenerateDebugInformation>No</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <SubSystem>Console</SubSystem>
-      <Version>
-      </Version>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
-    <ClCompile>
-      <AdditionalOptions>%(AdditionalOptions) /bigobj /bigobj</AdditionalOptions>
-      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
-      <CompileAs>CompileAsCpp</CompileAs>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <Optimization>MaxSpeed</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;NDEBUG;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;DLIB_JPEG_SUPPORT;DLIB_PNG_SUPPORT;NDEBUG;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ResourceCompile>
-    <Midl>
-      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
-      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
-    </Midl>
-    <Link>
-      <AdditionalDependencies>dlib_build\RelWithDebInfo\dlib.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;C:\dev\opencv-3.1.0\build\x64\vc14\lib\opencv_world310d.lib;ws2_32.lib;winmm.lib;comctl32.lib;gdi32.lib;imm32.lib;C:\Users\neutral\Anaconda3\Library\lib\libpng.lib;C:\Users\neutral\Anaconda3\Library\lib\jpeg.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
-      <GenerateDebugInformation>Debug</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <SubSystem>Console</SubSystem>
-      <Version>
-      </Version>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
