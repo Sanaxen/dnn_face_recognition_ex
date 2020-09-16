@@ -16,7 +16,13 @@ also needs [cuDNN v8.0.2 (July 24th, 2020), for CUDA 10.2](https://developer.nvi
 ## start  
 Place the photo of the person you want to authenticate in **images**.  
 
-<img src="./images/image00.png"/>
+<img src="./images/image00.png"/>  
+
+
+** `face_capture_???.bat` user_name **  
+You can also take the photo required to register your face.
+Take a front-facing photo and save it in capture.  
+
 
 ## step1  
 Execute **step1_step3.bat**  
@@ -28,7 +34,7 @@ Execute **step2.bat**
 The 128D-feature vector of each target person is generated from the photo list (imagelist.txt) to be authenticated, and the data is generated in **user_shape.**  
 The face image recognized from the photo is saved in **user_images**, but it will not be used anymore.  
 
-<img src="./images/image06.png"/>  
+<img src="./images/image08.png"/>  
 
 ## step3  
 Execute **step1_step3.bat**  

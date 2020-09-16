@@ -6,6 +6,8 @@
 #include <dlib/string.h>
 #include <dlib/image_io.h>
 #include <dlib/image_processing/frontal_face_detector.h>
+#include <dlib/image_processing/render_face_detections.h>
+#include <dlib/image_processing.h>
 #include <dlib/opencv.h>
 
 #include "opencv2/opencv.hpp"
@@ -51,11 +53,88 @@ using anet_type = loss_metric<fc_no_bias<128, avg_pool_everything<
 
 // ----------------------------------------------------------------------------------------
 
+namespace dnn_face_recognition_
+{
+	int face_chk = 0;
+};
+
+inline cv::Mat hconcat_ex(cv::Mat& im1, cv::Mat& im2)
+{
+	cv::Mat cat;
+	int h1 = im1.rows;
+	int w1 = im1.cols;
+	int h2 = im2.rows;
+	int w2 = im2.cols;
+	if (h1 < h2)
+	{
+		h1 = h2;
+		w1 = int(((float)h2 / (float)h1) * w2);
+		cv::resize(im1, im1, cv::Size(w1, h1));
+	}
+	else {
+		h2 = h1;
+		w2 = int(((float)h1 / (float)h2) * w1);
+		cv::resize(im2, im2, cv::Size(w2, h2));
+	}
+	cv::hconcat(im1, im2, cat);
+
+	return cat.clone();
+}
+
+inline cv::Mat vconcat_ex(cv::Mat& im1, cv::Mat& im2)
+{
+	cv::Mat cat;
+	int h1 = im1.rows;
+	int w1 = im1.cols;
+	int h2 = im2.rows;
+	int w2 = im2.cols;
+	if (h1 < h2)
+	{
+		w1 = w2;
+		h1 = int((w2 / w1) * h2);
+		cv::resize(im1, im1, cv::Size(w1, h1));
+	}
+	else {
+		w2 = w1;
+		h2 = int((w1 / w2) * h1);
+		cv::resize(im2, im2, cv::Size(w2, h2));
+	}
+	cv::vconcat(im1, im2, cat);
+
+	return cat.clone();
+}
+
+inline  void draw_face(cv::Mat& temp, rectangle& rect, std::vector<image_window::overlay_line>& line, std::vector<image_window::overlay_circle>& circle)
+{
+	cv::rectangle(temp,
+		cv::Point(rect.bl_corner().x(), rect.bl_corner().y()),
+		cv::Point(rect.tr_corner().x(), rect.tr_corner().y()),
+		cv::Scalar(0, 0, 200));
+
+	for (int i = 0; i < line.size(); i++)
+	{
+		cv::line(temp,
+			cv::Point(line[i].p1.x(), line[i].p1.y()),
+			cv::Point(line[i].p2.x(), line[i].p2.y()),
+			cv::Scalar(line[i].color.red, line[i].color.green, line[i].color.blue));
+	}
+	for (int i = 0; i < circle.size(); i++)
+	{
+		cv::circle(temp,
+			cv::Point(circle[i].center.x(), circle[i].center.y()),
+			circle[i].radius,
+			cv::Scalar(circle[i].color.red, circle[i].color.green, circle[i].color.blue));
+	}
+}
+
 
 inline std::string getFilename(const char* name, std::string& pathname, std::string& extname)
 {
 	std::string fullpath = std::string(name);
-	int path_i = fullpath.find_last_of("\\") + 1;//7
+	int path_i = 0;
+	if (strchr(fullpath.c_str(), '\\')) path_i = fullpath.find_last_of("\\") + 1;//7
+	else path_i = fullpath.find_last_of("/") + 1;//7
+
 	int ext_i = fullpath.find_last_of(".");//10
 	pathname = fullpath.substr(0, path_i + 1);//0文字目から７文字切り出す "C:\\aaa\\"
 	extname = fullpath.substr(ext_i, fullpath.size() - ext_i); // 10文字目から４文字切り出す ".txt"
@@ -63,6 +142,7 @@ inline std::string getFilename(const char* name, std::string& pathname, std::str
 
 	return filename;
 }
+
 inline std::string getFilename(std::string& name, std::string& pathname, std::string& extname)
 {
 	return getFilename(name.c_str(), pathname, extname);
@@ -94,9 +174,9 @@ inline std::string getUserName(const char* name)
 
 inline void _putText(cv::Mat& img, const cv::String& text, const cv::Point& org, const char* fontname, double fontScale, cv::Scalar color)
 {
-	int fontSize = (int)(10 * fontScale); // 10は適当
+	int fontSize = (int)(10 * fontScale); // 10 is suitable
 	int width = img.cols;
-	int height = fontSize * 3 / 2; // 高さはフォントサイズの1.5倍
+	int height = fontSize * 3 / 2; // Height is 1.5 times the font size
 
 	HDC hdc = ::CreateCompatibleDC(NULL);
 
@@ -174,7 +254,7 @@ inline int get_imagelist(std::vector<std::string>& imagelist)
 	{
 		char* p = strchr(buf, '\n');
 		if (p) *p = '\0';
-		imagelist.push_back("images\\" + std::string(buf));
+		imagelist.push_back("images/" + std::string(buf));
 	}
 	fclose(fp);
 
@@ -195,7 +275,7 @@ inline int get_shapelist(std::vector<std::string>& shapelist)
 		char* p = strchr(buf, '\n');
 		if (p) *p = '\0';
 		if (buf[0] == '\0') continue;
-		shapelist.push_back("user_shape\\" + std::string(buf));
+		shapelist.push_back("user_shape/" + std::string(buf));
 	}
 	fclose(fp);
 
@@ -248,17 +328,144 @@ inline int load_shapelist(std::vector<std::string>& shapelist, std::vector<std::
 	return 0;
 }
 
-
-inline float distance(std::vector<float>& v1, std::vector<float>& v2, float& cos_dist)
+inline std::vector<full_object_detection> face_shape_predictor(dlib::array2d<bgr_pixel>& img, std::vector<rectangle>& dets, shape_predictor& sp);
+inline std::vector<image_window::overlay_circle> render_face_detections2(
+	const std::vector<full_object_detection>& dets,
+	int& image_error,
+	const rgb_pixel color = rgb_pixel(255, 255, 0)
+)
 {
-	cos_dist = 0.0;
+	image_error = 0;
+	std::vector<image_window::overlay_circle> circles;
+	for (unsigned long i = 0; i < dets.size(); ++i)
+	{
+		if (dets[i].num_parts() != 68)
+		{
+			image_error = -1;
+			return std::vector<image_window::overlay_circle>();
+		}
+
+		const full_object_detection& d = dets[i];
+
+		{
+			//// Around Chin. Ear to Ear
+			circles.push_back(image_window::overlay_circle(d.part(0), 2, color));
+			circles.push_back(image_window::overlay_circle(d.part(16), 2, color));
+			circles.push_back(image_window::overlay_circle(d.part(8), 2, color));
+
+			circles.push_back(image_window::overlay_circle(d.part(28), 2, color));
+			circles.push_back(image_window::overlay_circle(d.part(19), 4, color));
+			circles.push_back(image_window::overlay_circle(d.part(24), 4, color));
+			circles.push_back(image_window::overlay_circle(d.part(30), 4, color));
+
+			int xv = d.part(30).x() - d.part(27).x();
+			if (std::abs(xv) > 14)
+			{
+				printf("Please straighten your face\n");
+				image_error = -1;
+				if (std::abs(xv) > 20)
+				{
+					image_error = -2;
+				}
+			}
+
+			int xv1 = d.part(0).x() - d.part(36).x();
+			int xv2 = d.part(45).x() - d.part(16).x();
+			if (std::abs(xv1 - xv2) > 25)
+			{
+				printf("Please straighten your face\n");
+				image_error = -3;
+			}
+			xv1 = d.part(3).x() - d.part(48).x();
+			xv2 = d.part(54).x() - d.part(13).x();
+			if (std::abs(xv1 - xv2) > 25)
+			{
+				printf("Please straighten your face\n");
+				image_error = -4;
+			}
+			xv1 = d.part(62).y() - d.part(66).y();
+			if (std::abs(xv1) > 10)
+			{
+				printf("Please close your mouth\n");
+				image_error = -5;
+			}
+
+
+			dlib::point p = d.part(36);
+			for (unsigned long i = 37; i <= 41; ++i)
+			{
+				p += d.part(i);
+			}
+			p = p / 6.0;
+			circles.push_back(image_window::overlay_circle(p, 4, color));
+
+			float d1 = std::abs(p.x() - d.part(0).x());
+
+			p = d.part(42);
+			for (unsigned long i = 43; i <= 47; ++i)
+			{
+				p += d.part(i);
+			}
+			p = p / 6.0;
+			circles.push_back(image_window::overlay_circle(p, 4, color));
+			float d2 = std::abs(p.x() - d.part(16).x());
+
+			if (fabs(d1 - d2) > 50)
+			{
+				printf("Please make your face front\n");
+				image_error = -6;
+			}
+			circles.push_back(image_window::overlay_circle(d.part(48), 4, color));
+			circles.push_back(image_window::overlay_circle(d.part(54), 4, color));
+			p = d.part(61);
+			for (unsigned long i = 62; i <= 67; ++i)
+			{
+				p += d.part(i);
+			}
+			p = p / 7.0;
+			circles.push_back(image_window::overlay_circle(p, 4, color));
+		}
+	}
+	return circles;
+}
+inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_predictor sp68)
+{
+	if (!dnn_face_recognition_::face_chk) return true;
+
+	dlib::array2d<bgr_pixel> img;
+	assign_image(img, cv_image<bgr_pixel>(face));
+
+	std::vector<rectangle> dets = detector(img);
+	if (dets.size() == 0) return false;
+
+	std::vector<full_object_detection> shapes = face_shape_predictor(img, dets, sp68);
+	cout << shapes.size() << endl;
+	if (shapes.size() != 1) return false;
+
+	int error_code;
+	render_face_detections2(shapes, error_code);
+
+	return (error_code == 0);
+}
+
+inline float distance(std::vector<float>& v1, std::vector<float>& v2)
+{
 	float s = 0.0;
 	for (int j = 0; j < 128; j++)
 	{
 		s += (v1[j] - v2[j])*(v1[j] - v2[j]);
-		cos_dist += v1[j] * v2[j];
 	}
 	return s;
+}
+
+inline float cos_distance(std::vector<float>& v1, std::vector<float>& v2)
+{
+	float cos_dist = 0.0;
+	for (int j = 0; j < 128; j++)
+	{
+		cos_dist += v1[j] * v2[j];
+	}
+	return cos_dist;
 }
 
 inline float distance(std::vector<float>& v, std::vector<std::vector<float>>& shapevalue_list, int& id, float& cos_dist)
@@ -273,7 +480,7 @@ inline float distance(std::vector<float>& v, std::vector<std::vector<float>>& sh
 #pragma omp parallel for
 	for (int i = 0; i < sz; i++)
 	{
-		dist[i] = distance(v, shapevalue_list[i], cos_dst[i]);
+		dist[i] = distance(v, shapevalue_list[i]);
 	}
 
 	for (int i = 0; i < sz; i++)
@@ -281,10 +488,14 @@ inline float distance(std::vector<float>& v, std::vector<std::vector<float>>& sh
 		if (dist[i] < mindist)
 		{
 			mindist = dist[i];
-			cos_dist = cos_dst[i];
 			id = i;
 		}
 	}
+
+	float d1 = cos_distance(v, v);
+	float d2 = cos_distance(shapevalue_list[id], shapevalue_list[id]);
+	cos_dist = cos_distance(v, shapevalue_list[id]) / sqrt(d1*d2);
+
 	return mindist;
 }
 
@@ -388,7 +599,7 @@ inline std::string face_recognition(cv::Mat& face_image, frontal_face_detector d
 	}
 }
 
-inline std::string webcam_face_recognition(frontal_face_detector detector, shape_predictor sp, anet_type net, std::vector<std::string>& shapelist, std::vector<std::vector<float>>& shapevalue_list, int camID = 0)
+inline std::string webcam_face_recognition(frontal_face_detector detector, shape_predictor sp, shape_predictor sp68, anet_type net, std::vector<std::string>& shapelist, std::vector<std::vector<float>>& shapevalue_list, int camID = 0)
 {
 	try
 	{
@@ -430,6 +641,12 @@ inline std::string webcam_face_recognition(frontal_face_detector detector, shape
 				count++;
 				continue;
 			}
+			if (!face_dir_check(temp, detector, sp68))
+			{
+				printf("You are not facing the front or you can see multiple people.\n");
+				count++;
+				continue;
+			}
 
 			float dist;
 			float cos_dist;
@@ -455,10 +672,13 @@ inline std::string webcam_face_recognition(int camID = 0)
 		frontal_face_detector detector = get_frontal_face_detector();
 		// We will also use a face landmarking model to align faces to a standard pose:  (see face_landmark_detection_ex.cpp for an introduction)
 		shape_predictor sp;
-		deserialize("db\\shape_predictor_5_face_landmarks.dat") >> sp;
+		deserialize("db/shape_predictor_5_face_landmarks.dat") >> sp;
 		// And finally we load the DNN responsible for face recognition.
 		anet_type net;
-		deserialize("db\\dlib_face_recognition_resnet_model_v1.dat") >> net;
+		deserialize("db/dlib_face_recognition_resnet_model_v1.dat") >> net;
+
+		shape_predictor sp68;
+		deserialize("db/shape_predictor_68_face_landmarks.dat") >> sp68;
 
 		std::vector<std::string> shapelist;
 		std::vector<std::vector<float>> shapevalue_list;
@@ -470,7 +690,7 @@ inline std::string webcam_face_recognition(int camID = 0)
 			}
 		}
 
-		webcam_face_recognition(detector, sp, net, shapelist, shapevalue_list, camID);
+		webcam_face_recognition(detector, sp, sp68, net, shapelist, shapevalue_list, camID);
 	}
 	catch (...)
 	{
@@ -485,9 +705,9 @@ inline int make_shape()
 
 	frontal_face_detector detector = get_frontal_face_detector();
 	shape_predictor sp;
-	deserialize("db\\shape_predictor_5_face_landmarks.dat") >> sp;
+	deserialize("db/shape_predictor_5_face_landmarks.dat") >> sp;
 	anet_type net;
-	deserialize("db\\dlib_face_recognition_resnet_model_v1.dat") >> net;
+	deserialize("db/dlib_face_recognition_resnet_model_v1.dat") >> net;
 
 	for (int id = 0; id < imagelist.size(); id++)
 	{
@@ -549,7 +769,7 @@ inline int make_shape()
 			win_clusters[cluster_id].set_image(tile_images(temp));
 
 			char clipped[256];
-			sprintf(clipped, "user_images\\%s.png", filename.c_str());
+			sprintf(clipped, "user_images/%s.png", filename.c_str());
 			cv::Mat x = dlib::toMat(tile_images(temp)).clone();
 			cv::cvtColor(x, x, CV_RGB2BGR);
 			cv::imwrite(clipped, x);
@@ -561,7 +781,7 @@ inline int make_shape()
 		cout << "jittered face descriptor for one face: " << trans(face_descriptor) << endl;
 
 		char user_shape[256];
-		sprintf(user_shape, "user_shape\\%s.txt", filename.c_str());
+		sprintf(user_shape, "user_shape/%s.txt", filename.c_str());
 		printf("%s\n", user_shape);
 
 		FILE* fp = fopen(user_shape, "w");
@@ -583,6 +803,134 @@ inline int make_shape()
 		}
 	}
 	return 0;
+}
+
+inline std::vector<full_object_detection> face_shape_predictor(dlib::array2d<bgr_pixel>& img, std::vector<rectangle>& dets, shape_predictor& sp)
+{
+	frontal_face_detector detector = get_frontal_face_detector();
+
+
+	// Now we will go ask the shape_predictor to tell us the pose of
+	// each face we detected.
+	std::vector<full_object_detection> shapes;
+	//cout << "number of dets: " << dets.size() << endl;
+	for (unsigned long j = 0; j < dets.size(); ++j)
+	{
+		full_object_detection shape = sp(img, dets[j]);
+		//cout << "number of parts: " << shape.num_parts() << endl;
+		//cout << "pixel position of first part:  " << shape.part(0) << endl;
+		//cout << "pixel position of second part: " << shape.part(1) << endl;
+
+		//for (int k = 2; k < shape.num_parts(); k++)
+		//{
+		//	cout << "pixel position of (" << k << "): " << shape.part(k) << endl;
+		//}
+		// You get the idea, you can get all the face part locations if
+		// you want them.  Here we just store them in shapes so we can
+		// put them on the screen.
+		shapes.push_back(shape);
+	}
+	return shapes;
+}
+
+
+
+
+inline int cam2face_shape(char* user, int camID = 0)
+{
+	int error_code = 0;
+	int count = 0;
+	try
+	{
+		frontal_face_detector detector = get_frontal_face_detector();
+		shape_predictor sp68;
+		deserialize("db/shape_predictor_68_face_landmarks.dat") >> sp68;
+
+
+		cv::VideoCapture cap(camID);
+		if (!cap.isOpened())
+		{
+			cerr << "Unable to connect to camera" << endl;
+			return 1;
+		}
+
+		while (true)
+		{
+			error_code = 0;
+			cv::Mat temp;
+			cap >> temp;
+
+			if (temp.empty() == true) {
+				break;
+			}
+			if (temp.size().width <= 640 || temp.size().height <= 640)
+			{
+				float a = 640.0 / temp.size().width;
+				float b = 640.0 / temp.size().height;
+
+				if (b > a) a = b;
+				cv::resize(temp, temp, cv::Size(temp.size().width*a, temp.size().height*a), 0, 0, cv::INTER_CUBIC);
+			}
+
+			dlib::array2d<bgr_pixel> img;
+			assign_image(img, cv_image<bgr_pixel>(temp));
+
+			std::vector<rectangle> dets = detector(img);
+			cout << "Number of faces detected: " << dets.size() << endl;
+			if (dets.size() != 1) continue;
+
+			std::vector<full_object_detection> shapes = face_shape_predictor(img, dets, sp68);
+			cout << shapes.size() << endl;
+			if (shapes.size() == 0) continue;
+			//for (int i = 0; i < shapes.size(); i++)
+			//{
+			//	for (int k = 0; k < shapes[i].num_parts(); k++)
+			//	{
+			//		cout << "pixel position of (" << k << "): " << shapes[i].part(k) << endl;
+			//	}
+			//}
+
+			std::vector<image_window::overlay_circle>& circle = render_face_detections2(shapes, error_code);
+
+			// Now let's view our face poses on the screen.
+			draw_face(temp, dets[0], render_face_detections(shapes), circle);
+			cout << "render_face_detections(shapes): " << render_face_detections(shapes).size() << endl;
+
+			cv::imshow("render_face_detections", temp);
+			//cv::waitKey(1);
+
+			temp = dlib::toMat(img);
+			try
+			{
+				cv::Mat roi_img(temp,
+					cv::Rect(
+						dets[0].tl_corner().x(), dets[0].tl_corner().y(),
+						dets[0].width(), dets[0].height()
+					)
+				);
+				cv::imshow("cap", roi_img);
+				if (error_code == 0)
+				{
+					char capimage_file[256];
+					sprintf(capimage_file, "capture/%s_%03d.png", user, count);
+					count++;
+					cv::imwrite(capimage_file, roi_img);
+					if ( count == 10 ) return error_code;
+				}
+			}
+			catch (...)
+			{
+				//
+			}
+			cv::waitKey(1);
+		}
+	}
+	catch (exception& e)
+	{
+		cout << "\nexception thrown!" << endl;
+		cout << e.what() << endl;
+	}
+	return error_code;
 }
 
 
