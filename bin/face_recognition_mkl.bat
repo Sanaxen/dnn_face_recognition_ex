@@ -1,1 +1,1 @@
-.\cpu\dnn_face_recognition_ex_MKL.exe %1 %2
+.\cpu\dnn_face_recognition_ex_MKL.exe %1 %2 %3 %4

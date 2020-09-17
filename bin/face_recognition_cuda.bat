@@ -1,1 +1,1 @@
-.\cuda\dnn_face_recognition_ex.exe %1 %2
+.\cuda\dnn_face_recognition_ex.exe %1 %2 %3 %4

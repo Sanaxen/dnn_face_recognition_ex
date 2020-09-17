@@ -1,1 +1,1 @@
-.\cpu\dnn_face_recognition_ex.exe %1 %2
+.\cpu\dnn_face_recognition_ex.exe %1 %2 %3 %4
