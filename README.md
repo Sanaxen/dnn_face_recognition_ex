@@ -48,3 +48,27 @@ Use **step4_face_recognition_cpu.bat** or **step4_face_recognition_cuda.bat** to
 It recognizes the face of a person in the camera and obtains the feature vector of that face.
 If the same feature vector as the feature vector matches any of the feature vectors in shaplist.txt, it is judged as a registered face.  
 <img src="./images/image07.png"/>  
+
+# command line option
+`dnn_face_recognition_ex.exe [parameter option] [command option]`
+## parameter option
+- `--t value`
+    value=Collation judgment threshold(default 0.2)
+- `--one_person [0|1]`
+    0:no limit on the number of people to recognize
+    1:recognition limited to one person
+- `--face_chek [0|1]`
+    0: no check  1:Inspect if it is straight in front  
+    
+## command option
+- `--cap [username]`
+    create face image -> ./capture
+- `--m`
+    imagelist.txt ->(output) shapelist.txt
+- `--recog`
+    real time camera image -> face recognition
+- `--image imagefile[.png|.jpg]`
+    imagefile -> face recognition
+
+`dnn_face_recognition_ex.exe imagefile[.png|.jpg]`
+   imagefile -> user_shape/imagefile.txt

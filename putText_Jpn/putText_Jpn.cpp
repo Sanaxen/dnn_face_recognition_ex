@@ -1,8 +1,11 @@
 //
+#include "../config.h"
 #include "putText_Jpn.h"
 
-//
+#ifdef _WIN64
 #include <windows.h>
+#endif
+
 #include <cstring>
 //#include <tchar.h>
 
@@ -16,6 +19,7 @@
 #include <string>
 
 //
+#ifdef USE_JAPANESE_CHAR
 namespace
 {
 	const TCHAR* P_STR_DEF_FONTNAME = TEXT("ÇlÇr ÉSÉVÉbÉN");
@@ -238,4 +242,11 @@ void sc::myCV::putText_Jpn(cv::Mat& a_r_img_dst, const TCHAR* a_p_text, cv::Poin
 
 	return;
 }
+#else
+void sc::myCV::putText_Jpn(cv::Mat& a_r_img_dst, const char *a_p_text, cv::Point a_pos_org, const int a_p_fontname, double a_font_scale, cv::Scalar a_font_color, int a_thickness, int lineType)
+{
+	cv::putText(a_r_img_dst, a_p_text, a_pos_org, cv::FONT_HERSHEY_PLAIN, a_font_scale, a_font_color, a_thickness, lineType);
+}
+#endif
+
 
