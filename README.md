@@ -52,23 +52,23 @@ If the same feature vector as the feature vector matches any of the feature vect
 # command line option
 `dnn_face_recognition_ex.exe [parameter option] [command option]`
 ## parameter option
-- `--t value`
+- `--t value`  
     value=Collation judgment threshold(default 0.2)
-- `--one_person [0|1]`
+- `--one_person [0|1]`  
     0:no limit on the number of people to recognize
     1:recognition limited to one person
-- `--face_chek [0|1]`
+- `--face_chek [0|1]`  
     0: no check  1:Inspect if it is straight in front  
     
-## command option
-- `--cap [username]`
+## command option  
+- `--cap [username]`  
     create face image -> ./capture
-- `--m`
+- `--m`  
     imagelist.txt ->(output) shapelist.txt
-- `--recog`
+- `--recog`  
     real time camera image -> face recognition
-- `--image imagefile[.png|.jpg]`
+- `--image imagefile[.png|.jpg]`  
     imagefile -> face recognition
 
-`dnn_face_recognition_ex.exe imagefile[.png|.jpg]`
+`dnn_face_recognition_ex.exe imagefile[.png|.jpg]`  
    imagefile -> user_shape/imagefile.txt
