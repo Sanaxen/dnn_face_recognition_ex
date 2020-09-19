@@ -18,6 +18,7 @@
 #include "opencv2/features2d/features2d.hpp"
 
 #include "config.h"
+#include "opencv_util.h"
 #include "putText_Jpn/putText_Jpn.h"
 
 
@@ -64,52 +65,6 @@ namespace dnn_face_recognition_
 	float collation_judgmentthreshold = 0.2;
 };
 
-
-inline cv::Mat hconcat_ex(cv::Mat& im1, cv::Mat& im2)
-{
-	cv::Mat cat;
-	int h1 = im1.rows;
-	int w1 = im1.cols;
-	int h2 = im2.rows;
-	int w2 = im2.cols;
-	if (h1 < h2)
-	{
-		h1 = h2;
-		w1 = int(((float)h2 / (float)h1) * w2);
-		cv::resize(im1, im1, cv::Size(w1, h1));
-	}
-	else {
-		h2 = h1;
-		w2 = int(((float)h1 / (float)h2) * w1);
-		cv::resize(im2, im2, cv::Size(w2, h2));
-	}
-	cv::hconcat(im1, im2, cat);
-
-	return cat.clone();
-}
-
-inline cv::Mat vconcat_ex(cv::Mat& im1, cv::Mat& im2)
-{
-	cv::Mat cat;
-	int h1 = im1.rows;
-	int w1 = im1.cols;
-	int h2 = im2.rows;
-	int w2 = im2.cols;
-	if (h1 < h2)
-	{
-		w1 = w2;
-		h1 = int((w2 / w1) * h2);
-		cv::resize(im1, im1, cv::Size(w1, h1));
-	}
-	else {
-		w2 = w1;
-		h2 = int((w1 / w2) * h1);
-		cv::resize(im2, im2, cv::Size(w2, h2));
-	}
-	cv::vconcat(im1, im2, cat);
-
-	return cat.clone();
-}
 
 inline void draw_face_rects(cv::Mat& image, rectangle& rect, cv::Scalar& bgr, const std::string& name = std::string(""))
 {
@@ -360,7 +315,7 @@ inline std::vector<std::vector<float>> get_shapevalue_list(const std::vector<std
 		}
 	}
 	printf("                                                             \r");
-	printf("done.\n");
+	printf("\ndone.\n");
 	return shapevalue_list;
 }
 
@@ -600,23 +555,42 @@ inline float distance(std::vector<float>& v, std::vector<std::vector<float>>& sh
 
 	std::vector<float> dist(sz);
 	std::vector<float> cos_dst(sz);
+	float d1, d2;
+#pragma omp parallel
+	{
 #pragma omp parallel for
-	for (int i = 0; i < sz; i++)
-	{
-		dist[i] = distance(v, shapevalue_list[i]);
-	}
-
-	for (int i = 0; i < sz; i++)
-	{
-		if (dist[i] < mindist)
+		for (int i = 0; i < sz; i++)
 		{
-			mindist = dist[i];
-			id = i;
+			dist[i] = distance(v, shapevalue_list[i]);
+		}
+#pragma omp barrier
+
+#pragma omp parallel for num_threads(4)
+		for (int i = 0; i < sz; i++)
+		{
+			if (dist[i] < mindist)
+			{
+#pragma omp critical
+				{
+					mindist = dist[i];
+					id = i;
+				}
+			}
+		}
+#pragma omp barrier
+
+#pragma omp sections
+		{
+			#pragma omp section
+			{
+				d1 = cos_distance(v, v);
+			}
+			#pragma omp section
+			{
+				d2 = cos_distance(shapevalue_list[id], shapevalue_list[id]);
+			}
 		}
 	}
-
-	float d1 = cos_distance(v, v);
-	float d2 = cos_distance(shapevalue_list[id], shapevalue_list[id]);
 	cos_dist = cos_distance(v, shapevalue_list[id]) / sqrt(d1*d2);
 
 	return mindist;
@@ -794,7 +768,7 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 			face_recog_image.face_image = temp.clone();
 			float dist;
 			float cos_dist;
-			std::vector<int> user_id = face_recognition(face_recog_image);
+			std::vector<int>& user_id = face_recognition(face_recog_image);
 			//face_recog_image.result("result.txt");
 
 			if (user_id.size() == 0)

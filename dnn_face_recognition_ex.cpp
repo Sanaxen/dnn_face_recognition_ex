@@ -128,7 +128,7 @@ int main(int argc, char** argv) try
 				printf("You are not facing the front or you can see multiple people.\n");
 				return 1;
 			}
-			std::vector<int> user_id = face_recognition(fr);
+			std::vector<int>& user_id = face_recognition(fr);
 
 			fr.result("result.txt");
 			draw_recgnition(fr.face_image, user_id, fr.rects, fr.shapelist);
@@ -165,6 +165,10 @@ int main(int argc, char** argv) try
 						}
 						if (match_user.empty()) match_user = tmp.clone();
 						else match_user = hconcat_ex(match_user, tmp);
+					}
+					catch (std::exception& e)
+					{
+						cout << e.what() << endl;
 					}
 					catch (...)
 					{
@@ -224,6 +228,10 @@ int main(int argc, char** argv) try
 						continue;
 					}
 				}
+				catch (std::exception& e)
+				{
+					cout << e.what() << endl;
+				}
 				catch (...)
 				{
 					continue;
@@ -256,7 +264,7 @@ int main(int argc, char** argv) try
 					}
 				}
 
-				std::vector<int> user_id = face_recognition(fr);
+				std::vector<int>& user_id = face_recognition(fr);
 				std::string user_name = "unknown";
 				if (user_id[0] >= 0) user_name = fr.shapelist[user_id[0]];
 
@@ -333,6 +341,10 @@ int main(int argc, char** argv) try
 	try
 	{
 		load_image(img, argv[1]);
+	}
+	catch (std::exception& e)
+	{
+		cout << e.what() << endl;
 	}
 	catch (...)
 	{

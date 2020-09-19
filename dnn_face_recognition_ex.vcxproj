@@ -214,6 +214,7 @@
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="dnn_face_recognition_ex.hpp" />
+    <ClInclude Include="opencv_util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
