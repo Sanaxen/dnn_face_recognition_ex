@@ -200,7 +200,7 @@ int main(int argc, char** argv) try
 					cv::imshow("-", match_user);
 				}
 			}
-			cv::waitKey(60 * 1000);
+			//cv::waitKey(60 * 1000);
 			exit(0);
 		}
 
