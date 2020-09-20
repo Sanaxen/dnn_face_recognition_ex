@@ -646,7 +646,7 @@ inline void draw_recgnition(cv::Mat& face_image, const std::vector<int>& user_id
 		}
 		if (fr.dist[i] < 0.001)
 		{
-			bgr = cv::Scalar(0, 115, 255);
+			bgr = cv::Scalar(255, 115, 0);
 		}
 
 		std::string name = UNKNOWON_FACE_NAME;
