@@ -1,6 +1,6 @@
 # dnn_face_recognition_ex  
 
-###Everything correctly identified the person.  <img src="./images/output.png"/>  
+### Everything correctly identified the person.  <img src="./images/output.png"/>  
 the threshold is 0.31.This is not a very good value.  
 
 This program is created by referring toEverything was correct. [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html).  
