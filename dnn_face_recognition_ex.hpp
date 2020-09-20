@@ -25,6 +25,19 @@
 using namespace dlib;
 using namespace std;
 
+// ----------------------------------------------------------------------------------------
+
+template <long num_filters, typename SUBNET> using con5d = con<num_filters, 5, 5, 2, 2, SUBNET>;
+template <long num_filters, typename SUBNET> using con5 = con<num_filters, 5, 5, 1, 1, SUBNET>;
+
+template <typename SUBNET> using downsampler = relu<affine<con5d<32, relu<affine<con5d<32, relu<affine<con5d<16, SUBNET>>>>>>>>>;
+template <typename SUBNET> using rcon5 = relu<affine<con5<45, SUBNET>>>;
+
+using net_type = loss_mmod<con<1, 9, 9, 1, 1, rcon5<rcon5<rcon5<downsampler<input_rgb_image_pyramid<pyramid_down<6>>>>>>>>;
+
+// ----------------------------------------------------------------------------------------
+
+
 template <template <int, template<typename>class, int, typename> class block, int N, template<typename>class BN, typename SUBNET>
 using residual = add_prev1<block<N, BN, 1, tag1<SUBNET>>>;
 
@@ -63,27 +76,32 @@ namespace dnn_face_recognition_
 	bool one_person = false;
 	bool tracking = true;
 	float collation_judgmentthreshold = 0.2;
+	std::string video_file = "";
+
+	bool dnn_face_detection = false;
 };
 
 
 inline void draw_face_rects(cv::Mat& image, rectangle& rect, cv::Scalar& bgr, const std::string& name = std::string(""))
 {
-	cv::rectangle(image,
-		cv::Point(rect.bl_corner().x(), rect.bl_corner().y()),
-		cv::Point(rect.tr_corner().x(), rect.tr_corner().y()),
-		bgr, 2);
+	long dy = (float)(rect.tr_corner().y() - rect.bl_corner().y()) / 5.0;
 
 	try
 	{
+		cv::rectangle(image,
+			cv::Point(rect.bl_corner().x(), rect.bl_corner().y()),
+			cv::Point(rect.tr_corner().x(), rect.tr_corner().y() + dy),
+			bgr, 2);
+
 		//printf("[%s]\n", name.c_str());
 		if (name != "")
 		{
 			cv::rectangle(image,
-				cv::Point(rect.bl_corner().x(), rect.tr_corner().y()),
-				cv::Point(rect.tr_corner().x(), rect.tr_corner().y() + 15),
+				cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + dy),
+				cv::Point(rect.tr_corner().x(), rect.tr_corner().y() + dy + 15),
 				cv::Scalar(0, 0, 5), -1, CV_AA);
 
-			sc::myCV::putText_Jpn(image, name.c_str(), cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + 15), std::string("ÇlÇr ÉSÉVÉbÉN").c_str(), 0.3, cv::Scalar(255, 255, 255), 3);
+			sc::myCV::putText_Jpn(image, name.c_str(), cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + dy + 15), std::string("ÇlÇr ÉSÉVÉbÉN").c_str(), 0.3, cv::Scalar(255, 255, 255), 3);
 		}
 	}
 	catch (std::exception& e)
@@ -341,6 +359,7 @@ class face_recognition_str
 {
 public:
 	cv::Mat					face_image;
+	std::string				video_file;
 	frontal_face_detector	detector;
 	shape_predictor			sp;
 	shape_predictor			sp68;
@@ -352,6 +371,9 @@ public:
 	std::vector<rectangle> rects;
 
 	std::vector<int> result_id;
+
+	///////////////////////
+	net_type detect_net;
 
 	void reset()
 	{
@@ -366,6 +388,11 @@ public:
 		deserialize("db/shape_predictor_5_face_landmarks.dat") >> sp;
 		deserialize("db/dlib_face_recognition_resnet_model_v1.dat") >> net;
 		deserialize("db/shape_predictor_68_face_landmarks.dat") >> sp68;
+
+		if (dnn_face_recognition_::dnn_face_detection)
+		{
+			deserialize("db/mmod_human_face_detector.dat") >> detect_net;
+		}
 	}
 
 	inline int init()
@@ -647,13 +674,32 @@ inline std::vector<int> face_recognition(face_recognition_str& face_recog_image)
 
 		face_recog_image.rects.clear();
 		std::vector<matrix<rgb_pixel>> faces;
-		for (auto face : face_recog_image.detector(img))
+
+		if (dnn_face_recognition_::dnn_face_detection)
 		{
-			face_recog_image.rects.push_back(face);
-			auto shape = face_recog_image.sp(img, face);
-			matrix<rgb_pixel> face_chip;
-			extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
-			faces.push_back(move(face_chip));
+			matrix<rgb_pixel> img2;
+			assign_image(img2, cv_image<bgr_pixel>(face_recog_image.face_image));
+
+			auto dets = face_recog_image.detect_net(img2);
+			for (auto&& face : dets)
+			{
+				face_recog_image.rects.push_back(face.rect);
+				auto shape = face_recog_image.sp(img, face.rect);
+				matrix<rgb_pixel> face_chip;
+				extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
+				faces.push_back(move(face_chip));
+			}
+		}
+		else
+		{
+			for (auto face : face_recog_image.detector(img))
+			{
+				face_recog_image.rects.push_back(face);
+				auto shape = face_recog_image.sp(img, face);
+				matrix<rgb_pixel> face_chip;
+				extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
+				faces.push_back(move(face_chip));
+			}
 		}
 
 		if (faces.size() == 0)
@@ -720,7 +766,16 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 	std::vector<int> users;
 	try
 	{
-		cv::VideoCapture cap(camID);
+		cv::VideoCapture cap;
+
+		if (dnn_face_recognition_::video_file != "")
+		{
+			cap.open(dnn_face_recognition_::video_file);
+		}
+		else
+		{
+			cap = cv::VideoCapture(camID);
+		}
 		if (!cap.isOpened())
 		{
 			cerr << "Unable to connect to camera" << endl;
@@ -730,7 +785,12 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 		{
 			return users;
 		}
-
+///////////////////////////
+		cv::VideoWriter writer;
+		int fourcc = cv::VideoWriter::fourcc('m', 'p', '4', 'v');
+		int    width = 0, height = 0;
+		double fps = cap.get(cv::CAP_PROP_FPS);
+///////////////////////////
 
 		int wait_time = 20;
 		int count = 0;
@@ -742,7 +802,20 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 
 			if (temp.empty() == true) {
 				cout << "No image!" << endl;
-				continue;
+				break;
+			}
+
+			temp = opencv_util::resize_ex(temp);
+			if (width == 0)
+			{
+				std::string pathname;
+				std::string extname;
+				std::string& filename = getFilename(dnn_face_recognition_::video_file, pathname, extname);
+
+				
+				width = (int)temp.size().width;
+				height = (int)temp.size().height;
+				writer.open(filename+"_output.mp4", fourcc, fps, cv::Size(width, height));
 			}
 
 			if (dnn_face_recognition_::one_person)
@@ -751,7 +824,7 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 				cv::Mat temp2 = temp.clone();
 				cv::putText(temp2, time_count, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX, 3, cv::Scalar(1, 1, 1), 3);
 				cv::imshow("", temp2);
-				cv::waitKey(1);
+				if (cv::waitKey(1) == 27) break;
 				if (count < wait_time)
 				{
 					count++;
@@ -761,6 +834,7 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 				{
 					printf("You are not facing the front or you can see multiple people.\n");
 					count++;
+					writer << temp;
 					continue;
 				}
 			}
@@ -773,17 +847,23 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 
 			if (user_id.size() == 0)
 			{
+				cv::imshow("", temp);
+				writer << temp;
+				if (cv::waitKey(1) == 27) break;
 				continue;
 			}
 			if (dnn_face_recognition_::tracking)
 			{
 				draw_recgnition(temp, user_id, face_recog_image.rects, face_recog_image.shapelist);
 				cv::imshow("", temp);
-				cv::waitKey(1);
+				writer << temp;
+				if (cv::waitKey(1) == 27) break;
 				continue;
 			}
 			return users;
 		}
+		writer.release();
+		cap.release();
 	}
 	catch (std::exception& e)
 	{
@@ -970,14 +1050,25 @@ inline int cam2face_shape(char* user, int camID = 0)
 		shape_predictor sp68;
 		deserialize("db/shape_predictor_68_face_landmarks.dat") >> sp68;
 
+		cv::VideoCapture cap;
 
-		cv::VideoCapture cap(camID);
+		if (dnn_face_recognition_::video_file != "")
+		{
+			cap.open(dnn_face_recognition_::video_file);
+		}
+		else
+		{
+			cap = cv::VideoCapture(camID);
+		}
+
+
 		if (!cap.isOpened())
 		{
 			cerr << "Unable to connect to camera" << endl;
 			return 1;
 		}
 
+		int empty_coun = 0;
 		while (true)
 		{
 			error_code = 0;
@@ -987,14 +1078,16 @@ inline int cam2face_shape(char* user, int camID = 0)
 			if (temp.empty() == true) {
 				break;
 			}
-			if (temp.size().width <= 640 || temp.size().height <= 640)
-			{
-				float a = 640.0 / temp.size().width;
-				float b = 640.0 / temp.size().height;
+			temp = opencv_util::resize_ex(temp);
 
-				if (b > a) a = b;
-				cv::resize(temp, temp, cv::Size(temp.size().width*a, temp.size().height*a), 0, 0, cv::INTER_CUBIC);
-			}
+			//if (temp.size().width <= 640 || temp.size().height <= 640)
+			//{
+			//	float a = 640.0 / temp.size().width;
+			//	float b = 640.0 / temp.size().height;
+
+			//	if (b > a) a = b;
+			//	cv::resize(temp, temp, cv::Size(temp.size().width*a, temp.size().height*a), 0, 0, cv::INTER_CUBIC);
+			//}
 
 			dlib::array2d<bgr_pixel> img;
 			assign_image(img, cv_image<bgr_pixel>(temp));
@@ -1021,7 +1114,7 @@ inline int cam2face_shape(char* user, int camID = 0)
 			cout << "render_face_detections(shapes): " << render_face_detections(shapes).size() << endl;
 
 			cv::imshow("render_face_detections", temp);
-			//cv::waitKey(1);
+			if ( cv::waitKey(1) == 27 ) break;
 
 			temp = dlib::toMat(img);
 			try
@@ -1039,7 +1132,8 @@ inline int cam2face_shape(char* user, int camID = 0)
 					sprintf(capimage_file, "capture/%s_%03d.png", user, count);
 					count++;
 					cv::imwrite(capimage_file, roi_img);
-					if ( count == 10 ) return error_code;
+					if (cv::waitKey(1) == 27) break;
+					//if ( count == 10 ) return error_code;
 				}
 			}
 			catch (std::exception& e)

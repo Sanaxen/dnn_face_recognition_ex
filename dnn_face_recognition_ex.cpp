@@ -17,13 +17,21 @@ int main(int argc, char** argv) try
 	{
 		printf("%s args\n", argv[0]);
 		printf("args:\n");
+		printf("============ parameter option ===========\n");
 		printf("--face_chek [0|1]\n");
 		printf("        0: no check  1:Inspect if it is straight in front\n");
 		printf("--t value\n");
 		printf("        value=Collation judgment threshold(default 0.2)\n");
+		printf("--video moving_image_file\n");
+		printf("        Input will be a video file\n");
 		printf("--one_person [0|1]\n");
 		printf("        0:no limit on the number of people to recognize\n");
 		printf("        1:recognition limited to one person\n");
+		printf("--dnn_face_detect [0|1]\n");
+		printf("        0:default\n");
+		printf("        1:CNN based face detector\n");
+		printf("\n");
+		printf("============ command option ===========\n");
 		printf("--cap [username]\n");
 		printf("       create face image -> capture\n");
 		printf("--m\n");
@@ -34,7 +42,8 @@ int main(int argc, char** argv) try
 		printf("       imagefile -> face recognition\n");
 		printf("\n");
 		printf("imagefile[.png|.jpg] ->(output) user_shape/imagefile.txt\n");
-
+		printf("moving_image_file->(output) user_shape/imagefile.txt\n");
+		printf("\n\nIf the input is a video file, the result is output as output.mp4\n");
 		return -1;
 	}
 
@@ -59,6 +68,16 @@ int main(int argc, char** argv) try
 		if (std::string(argv[i]) == "--one_person")
 		{
 			dnn_face_recognition_::one_person = atoi(argv[i + 1]);
+			i++;
+		}
+		if (std::string(argv[i]) == "--video")
+		{
+			dnn_face_recognition_::video_file = std::string(argv[i + 1]);
+			i++;
+		}
+		if (std::string(argv[i]) == "--dnn_face_detect")
+		{
+			dnn_face_recognition_::dnn_face_detection = atoi(argv[i + 1]);
 			i++;
 		}
 	}
@@ -164,7 +183,7 @@ int main(int argc, char** argv) try
 							continue;
 						}
 						if (match_user.empty()) match_user = tmp.clone();
-						else match_user = hconcat_ex(match_user, tmp);
+						else match_user = opencv_util::hconcat_ex(match_user, tmp);
 					}
 					catch (std::exception& e)
 					{
@@ -308,7 +327,7 @@ int main(int argc, char** argv) try
 						{
 							sc::myCV::putText_Jpn(tmp, (filename).c_str(), cv::Point(10, 90), std::string("ÇlÇr ÉSÉVÉbÉN").c_str(), 0.5, cv::Scalar(150, 255, 255), 3);
 						}
-						cv::Mat cat = hconcat_ex(tmp, user);
+						cv::Mat cat = opencv_util::hconcat_ex(tmp, user);
 						cv::imwrite("tmp/error_" + std::to_string(i) + " .png", cat);
 
 						cv::imshow("-", cat);
