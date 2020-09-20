@@ -82,7 +82,7 @@ namespace dnn_face_recognition_
 };
 
 
-inline void draw_face_rects(cv::Mat& image, rectangle& rect, cv::Scalar& bgr, const std::string& name = std::string(""))
+inline void draw_face_rects(cv::Mat& image, const rectangle& rect, cv::Scalar& bgr, const std::string& name = std::string(""))
 {
 	long dy = (float)(rect.tr_corner().y() - rect.bl_corner().y()) / 5.0;
 
@@ -407,7 +407,7 @@ public:
 		return 0;
 	}
 
-	inline int result(std::string filename) const
+	inline int result(const std::string filename) const
 	{
 		FILE* fp = fopen(filename.c_str(), "w");
 		if (fp == NULL)
@@ -553,7 +553,7 @@ inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_
 	return (error_code == 0);
 }
 
-inline float distance(std::vector<float>& v1, std::vector<float>& v2)
+inline float distance(const std::vector<float>& v1, const std::vector<float>& v2)
 {
 	float s = 0.0;
 	for (int j = 0; j < 128; j++)
@@ -563,7 +563,7 @@ inline float distance(std::vector<float>& v1, std::vector<float>& v2)
 	return s;
 }
 
-inline float cos_distance(std::vector<float>& v1, std::vector<float>& v2)
+inline float cos_distance(const std::vector<float>& v1, const std::vector<float>& v2)
 {
 	float cos_dist = 0.0;
 	for (int j = 0; j < 128; j++)
@@ -573,7 +573,7 @@ inline float cos_distance(std::vector<float>& v1, std::vector<float>& v2)
 	return cos_dist;
 }
 
-inline float distance(std::vector<float>& v, std::vector<std::vector<float>>& shapevalue_list, int& id, float& cos_dist)
+inline float distance(const std::vector<float>& v, const std::vector<std::vector<float>>& shapevalue_list, int& id, float& cos_dist)
 {
 	float mindist = 9999999999.0;
 	id = -1;
@@ -623,15 +623,31 @@ inline float distance(std::vector<float>& v, std::vector<std::vector<float>>& sh
 	return mindist;
 }
 
-inline void draw_recgnition(cv::Mat& face_image, std::vector<int>& user_id, std::vector<rectangle>& rects, std::vector<std::string>& shapelist)
+inline void draw_recgnition(cv::Mat& face_image, const std::vector<int>& user_id, const face_recognition_str& fr)
 {
 	for (int i = 0; i < user_id.size(); i++)
 	{
 		std::string user_name = UNKNOWON_FACE_NAME;
-		if (user_id[i] >= 0) user_name = shapelist[user_id[i]];
+		if (user_id[i] >= 0) user_name = fr.shapelist[user_id[i]];
 		//printf("user %s\n", user_name.c_str());
 
 		cv::Scalar bgr(50, 255, 0);
+		if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.5)
+		{
+			bgr = cv::Scalar(12, 215, 243);
+		}
+		if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.7)
+		{
+			bgr = cv::Scalar(0, 128, 255);
+		}
+		if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.95)
+		{
+			bgr = cv::Scalar(0, 0, 255);
+		}
+		if (fr.dist[i] < 0.001)
+		{
+			bgr = cv::Scalar(0, 115, 255);
+		}
 
 		std::string name = UNKNOWON_FACE_NAME;
 		if (user_name == UNKNOWON_FACE_NAME) bgr = cv::Scalar(128, 128, 128);
@@ -643,7 +659,7 @@ inline void draw_recgnition(cv::Mat& face_image, std::vector<int>& user_id, std:
 			//printf("name:%s\n", name.c_str());
 			name = getUserName(name.c_str());
 		}
-		draw_face_rects(face_image, rects[i], bgr, name);
+		draw_face_rects(face_image, fr.rects[i], bgr, name);
 	}
 }
 
@@ -854,7 +870,7 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 			}
 			if (dnn_face_recognition_::tracking)
 			{
-				draw_recgnition(temp, user_id, face_recog_image.rects, face_recog_image.shapelist);
+				draw_recgnition(temp, user_id, face_recog_image);
 				cv::imshow("", temp);
 				writer << temp;
 				if (cv::waitKey(1) == 27) break;
