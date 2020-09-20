@@ -1,4 +1,12 @@
-# dnn_face_recognition_ex
+# dnn_face_recognition_ex  
+
+<img src="./images/test1.gif"/>
+
+This program is created by referring to [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html).  
+Most of the main mechanism is the same as [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html).  
+	It uses the pre-trained [dlib_face_recognition_resnet_model_v1 model](https://github.com/davisking/dlib-models).  
+Quoting the comments from the original [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html),	the accuracy of the standard LFW surface for this model is **99.38%**.  
+A recognition benchmark comparable to other cutting-edge methods for the face Certified as of February 2017.  
 
 ## requirements
 **Visual Studio 2017** or higher is required to build.  
