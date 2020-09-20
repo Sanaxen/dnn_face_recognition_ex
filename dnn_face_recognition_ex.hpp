@@ -425,7 +425,11 @@ public:
 				std::string extname;
 				user_name = getFilename(shapelist[result_id[i]].c_str(), pathname, extname);
 			}
-			fprintf(fp, "%s,%.4f,%.4f\n", user_name.c_str(), dist[i], cos_dist[i]);
+
+			fprintf(fp, "%s	dist=	%.4f	cos=	%.4f	rect=	%d	%d	%d	%d\n", 
+				user_name.c_str(), dist[i], cos_dist[i],
+				rects[i].bl_corner().x(), rects[i].bl_corner().y(),
+				rects[i].tr_corner().x(), rects[i].tr_corner().y());
 		}
 		fclose(fp);
 		return 0;
