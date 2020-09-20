@@ -121,7 +121,7 @@ int main(int argc, char** argv) try
 				if (!dnn_face_recognition_::tracking)
 				{
 					fr.result("result.txt");
-					draw_recgnition(fr.face_image, user_id, fr.rects, fr.shapelist);
+					draw_recgnition(fr.face_image, user_id, fr);
 					cv::imshow("", fr.face_image);
 					cv::waitKey(60 * 1000);
 				}
@@ -150,7 +150,7 @@ int main(int argc, char** argv) try
 			std::vector<int>& user_id = face_recognition(fr);
 
 			fr.result("result.txt");
-			draw_recgnition(fr.face_image, user_id, fr.rects, fr.shapelist);
+			draw_recgnition(fr.face_image, user_id, fr);
 			cv::imshow("", fr.face_image);
 
 			cv::Mat match_user;
