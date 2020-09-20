@@ -152,6 +152,7 @@ int main(int argc, char** argv) try
 			fr.result("result.txt");
 			draw_recgnition(fr.face_image, user_id, fr);
 			cv::imshow("", fr.face_image);
+			cv::imwrite("output.png", fr.face_image);
 
 			cv::Mat match_user;
 			for (int i = 0; i < user_id.size(); i++)
