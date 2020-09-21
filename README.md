@@ -10,7 +10,7 @@ Bruce_Willis was mistaken for Jose_Dirceu, Jean_Charest.
 
 This is an example of forcing others to be identified as the same person, but the threshold has been raised to 0.31 so it's really unidentifiable.
 
-This program is created by referring toEverything was correct. [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html).  
+This program is written with reference to [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html).  
 Most of the main mechanism is the same as [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html).  
 	It uses the pre-trained [dlib_face_recognition_resnet_model_v1 model](https://github.com/davisking/dlib-models).  
 Quoting the comments from the original [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html),	the accuracy of the standard LFW surface for this model is **99.38%**.  
