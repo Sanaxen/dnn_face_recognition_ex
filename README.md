@@ -2,9 +2,12 @@
 
 ### identified people correctly in almost everything..  <img src="./images/output.png"/>  
 the threshold is 0.31.This is not a very good value.  
-Bruce_Willis was mistaken for Jose_Dirceu.
+Bruce_Willis was mistaken for Jose_Dirceu, Jean_Charest.
 <img src="./images/error_output.png"/>  
+<img src="./images/Jean_Charest_0010.jpg"/>  
 <img src="./images/Jose_Dirceu_0002.jpg"/>  
+
+
 This is an example of forcing others to be identified as the same person, but the threshold has been raised to 0.31 so it's really unidentifiable.
 
 This program is created by referring toEverything was correct. [dnn_face_recognition_ex.cpp](http://dlib.net/dnn_face_recognition_ex.cpp.html).  
