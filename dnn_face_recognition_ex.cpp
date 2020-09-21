@@ -79,6 +79,12 @@ int main(int argc, char** argv) try
 		{
 			dnn_face_recognition_::dnn_face_detection = atoi(argv[i + 1]);
 			i++;
+
+			if (dnn_face_recognition_::dnn_face_detection > 2 || dnn_face_recognition_::dnn_face_detection < 0)
+			{
+				dnn_face_recognition_::dnn_face_detection = 0;
+				printf("option error[--dnn_face_detect] -> --dnn_face_detect 0\n");
+			}
 		}
 	}
 	printf("camID= %d\n", camID);

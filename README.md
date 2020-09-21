@@ -71,6 +71,7 @@ If the same feature vector as the feature vector matches any of the feature vect
 - **`--dnn_face_detect [0|1]`**  
     0:default  
     1:CNN based face detector  
+    2:Resnet based face detector  
 - **`--video moving_image_file`**  
     Input will be a video file  
     

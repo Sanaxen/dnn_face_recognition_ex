@@ -97,4 +97,21 @@ namespace opencv_util
 		}
 		return temp;
 	}
+
+	inline void resize_padd(cv::Mat& target_mat, int width)
+	{
+		cv::Mat work_mat = cv::Mat::zeros(cv::Size(width, width), CV_8UC3);
+
+		int big_width = target_mat.cols > target_mat.rows ? target_mat.cols : target_mat.rows;
+		double ratio = ((double)width / (double)big_width);
+
+		cv::Mat convert_mat;
+		cv::resize(target_mat, convert_mat, cv::Size(), ratio, ratio, cv::INTER_NEAREST);
+
+		cv::Mat Roi1(work_mat, cv::Rect((width - convert_mat.cols) / 2, (width - convert_mat.rows) / 2,
+			convert_mat.cols, convert_mat.rows));
+		convert_mat.copyTo(Roi1);
+
+		target_mat = work_mat.clone();
+	}
 };

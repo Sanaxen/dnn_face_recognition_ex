@@ -16,9 +16,11 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/features2d/features2d.hpp"
+#include <opencv2/dnn.hpp>
 
 #include "config.h"
 #include "opencv_util.h"
+#include "dlib_util.h"
 #include "putText_Jpn/putText_Jpn.h"
 
 
@@ -78,13 +80,13 @@ namespace dnn_face_recognition_
 	float collation_judgmentthreshold = 0.2;
 	std::string video_file = "";
 
-	bool dnn_face_detection = false;
+	int dnn_face_detection = 0;
 };
 
 
 inline void draw_face_rects(cv::Mat& image, const rectangle& rect, cv::Scalar& bgr, const std::string& name = std::string(""))
 {
-	long dy = (float)(rect.tr_corner().y() - rect.bl_corner().y()) / 5.0;
+	long dy = (float)(rect.tr_corner().y() - rect.bl_corner().y()) / 6.0;
 
 	try
 	{
@@ -97,11 +99,18 @@ inline void draw_face_rects(cv::Mat& image, const rectangle& rect, cv::Scalar& b
 		if (name != "")
 		{
 			cv::rectangle(image,
-				cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + dy),
-				cv::Point(rect.tr_corner().x(), rect.tr_corner().y() + dy + 15),
-				cv::Scalar(0, 0, 5), -1, CV_AA);
+				cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + dy + 15),
+				cv::Point(rect.tr_corner().x(), rect.tr_corner().y() + dy),
+				cv::Scalar(100, 0, 0), -1, CV_AA);
 
-			sc::myCV::putText_Jpn(image, name.c_str(), cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + dy + 15), std::string("‚l‚r ƒSƒVƒbƒN").c_str(), 0.3, cv::Scalar(255, 255, 255), 3);
+			if (name == UNKNOWON_FACE_NAME)
+			{
+				sc::myCV::putText_Jpn(image, name.c_str(), cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + dy + 10), std::string("‚l‚r ƒSƒVƒbƒN").c_str(), 0.3, cv::Scalar(255, 255, 255), 3);
+			}
+			else
+			{
+				sc::myCV::putText_Jpn(image, name.c_str(), cv::Point(rect.bl_corner().x(), rect.tr_corner().y() + dy + 10), std::string("‚l‚r ƒSƒVƒbƒN").c_str(), 0.3, cv::Scalar(0, 255, 255), 3);
+			}
 		}
 	}
 	catch (std::exception& e)
@@ -375,6 +384,9 @@ public:
 	///////////////////////
 	net_type detect_net;
 
+	///////////////////////
+	cv::dnn::Net res10net;
+
 	void reset()
 	{
 		result_id.clear();
@@ -389,9 +401,28 @@ public:
 		deserialize("db/dlib_face_recognition_resnet_model_v1.dat") >> net;
 		deserialize("db/shape_predictor_68_face_landmarks.dat") >> sp68;
 
-		if (dnn_face_recognition_::dnn_face_detection)
+		if (dnn_face_recognition_::dnn_face_detection == 1)
 		{
 			deserialize("db/mmod_human_face_detector.dat") >> detect_net;
+		}
+		if (dnn_face_recognition_::dnn_face_detection == 2)
+		{
+			cv::String modelConfiguration = "db/res10/deploy.prototxt";
+			cv::String modelBinary = "db/res10/res10_300x300_ssd_iter_140000.caffemodel";
+
+			res10net = cv::dnn::readNetFromCaffe(modelConfiguration, modelBinary);
+			if (res10net.empty())
+			{
+				cerr << "Can't load network by using the following files: " << endl;
+				cerr << "prototxt:   " << modelConfiguration << endl;
+				cerr << "caffemodel: " << modelBinary << endl;
+				exit(-1);
+			}
+#ifdef USE_GPU
+			res10net.setPreferableTarget(cv::dnn::DNN_TARGET_OPENCL);
+#else
+			res10net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+#endif
 		}
 	}
 
@@ -636,14 +667,14 @@ inline void draw_recgnition(cv::Mat& face_image, const std::vector<int>& user_id
 		//printf("user %s\n", user_name.c_str());
 
 		cv::Scalar bgr(50, 255, 0);
-		if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.5)
-		{
-			bgr = cv::Scalar(12, 215, 243);
-		}
-		if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.7)
-		{
-			bgr = cv::Scalar(0, 128, 255);
-		}
+		//if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.5)
+		//{
+		//	bgr = cv::Scalar(12, 215, 243);
+		//}
+		//if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.7)
+		//{
+		//	bgr = cv::Scalar(0, 128, 255);
+		//}
 		if (fr.dist[i] > dnn_face_recognition_::collation_judgmentthreshold*0.95)
 		{
 			bgr = cv::Scalar(0, 0, 255);
@@ -688,6 +719,8 @@ inline std::vector<int> face_recognition(face_recognition_str& face_recog_image)
 			cout << "No image!" << endl;
 			return recog_faces;
 		}
+		if (face_recog_image.face_image.channels() == 4)
+			cvtColor(face_recog_image.face_image, face_recog_image.face_image, cv::COLOR_BGRA2BGR);
 
 		dlib::array2d<bgr_pixel> img;
 		assign_image(img, cv_image<bgr_pixel>(face_recog_image.face_image));
@@ -695,7 +728,59 @@ inline std::vector<int> face_recognition(face_recognition_str& face_recog_image)
 		face_recog_image.rects.clear();
 		std::vector<matrix<rgb_pixel>> faces;
 
-		if (dnn_face_recognition_::dnn_face_detection)
+		if (dnn_face_recognition_::dnn_face_detection == 2)
+		{
+			//res10_300x300_ssd
+			const size_t inWidth = 300;
+			const size_t inHeight = 300;
+			const double inScaleFactor = 1.0;
+			const cv::Scalar meanVal(104.0, 177.0, 123.0);
+
+			cv::Mat inputBlob = cv::dnn::blobFromImage(face_recog_image.face_image, inScaleFactor,
+				cv::Size(inWidth, inHeight), meanVal, false, false); 
+			face_recog_image.res10net.setInput(inputBlob, "data");
+			
+			cv::Mat detection = face_recog_image.res10net.forward("detection_out");
+			
+			cv::Mat detectionMat(detection.size[2], detection.size[3], CV_32F, detection.ptr<float>());
+			const float confidenceThreshold = 0.5;
+
+			for (int i = 0; i < detectionMat.rows; i++)
+			{
+				const float confidence = detectionMat.at<float>(i, 2);
+
+				if (confidence > confidenceThreshold)
+				{
+					const int xLeftBottom = static_cast<int>(detectionMat.at<float>(i, 3) * face_recog_image.face_image.cols);
+					const int yLeftBottom = static_cast<int>(detectionMat.at<float>(i, 4) * face_recog_image.face_image.rows);
+					const int xRightTop = static_cast<int>(detectionMat.at<float>(i, 5) * face_recog_image.face_image.cols);
+					const int yRightTop = static_cast<int>(detectionMat.at<float>(i, 6) * face_recog_image.face_image.rows);
+					
+					cv::Rect cvrect((int)xLeftBottom, (int)yLeftBottom,
+						(int)(xRightTop - xLeftBottom),
+						(int)(yRightTop - yLeftBottom));
+
+					dlib::rectangle face = dlib_util::openCVRectToDlib(cvrect);
+#if 0
+					face_recog_image.rects.push_back(face);
+					cv::rectangle(face_recog_image.face_image, cvrect, cv::Scalar(0, 255, 0));
+
+					cv::Mat cutimg(face_recog_image.face_image, cvrect);
+					opencv_util::resize_padd(cutimg, 150);
+					matrix<rgb_pixel> img2;
+					assign_image(img2, cv_image<bgr_pixel>(cutimg));
+					faces.push_back(img2);
+#else
+					face_recog_image.rects.push_back(face);
+					auto shape = face_recog_image.sp(img, face);
+					matrix<rgb_pixel> face_chip;
+					extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
+					faces.push_back(move(face_chip));
+#endif
+				}
+			}
+		}else
+		if (dnn_face_recognition_::dnn_face_detection == 1)
 		{
 			matrix<rgb_pixel> img2;
 			assign_image(img2, cv_image<bgr_pixel>(face_recog_image.face_image));
@@ -703,22 +788,46 @@ inline std::vector<int> face_recognition(face_recognition_str& face_recog_image)
 			auto dets = face_recog_image.detect_net(img2);
 			for (auto&& face : dets)
 			{
+#if 0
+				face_recog_image.rects.push_back(face.rect);
+				cv::Rect cvrect = dlibRectangleToOpenCV(face.rect);
+				cv::rectangle(face_recog_image.face_image, cvrect, cv::Scalar(0, 255, 0));
+
+				cv::Mat cutimg(face_recog_image.face_image, cvrect);
+				opencv_util::resize_padd(cutimg, 150);
+				matrix<rgb_pixel> img2;
+				assign_image(img2, cv_image<bgr_pixel>(cutimg));
+				faces.push_back(img2);
+#else
 				face_recog_image.rects.push_back(face.rect);
 				auto shape = face_recog_image.sp(img, face.rect);
 				matrix<rgb_pixel> face_chip;
 				extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
 				faces.push_back(move(face_chip));
+#endif
 			}
 		}
 		else
 		{
 			for (auto face : face_recog_image.detector(img))
 			{
+#if 0
+				face_recog_image.rects.push_back(face);
+				cv::Rect cvrect = dlibRectangleToOpenCV(face);
+				cv::rectangle(face_recog_image.face_image, cvrect, cv::Scalar(0, 255, 0));
+
+				cv::Mat cutimg(face_recog_image.face_image, cvrect);
+				opencv_util::resize_padd(cutimg, 150);
+				matrix<rgb_pixel> img2;
+				assign_image(img2, cv_image<bgr_pixel>(cutimg));
+				faces.push_back(img2);
+#else
 				face_recog_image.rects.push_back(face);
 				auto shape = face_recog_image.sp(img, face);
 				matrix<rgb_pixel> face_chip;
 				extract_image_chip(img, get_face_chip_details(shape, 150, 0.25), face_chip);
 				faces.push_back(move(face_chip));
+#endif
 			}
 		}
 
@@ -810,6 +919,7 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 		int fourcc = cv::VideoWriter::fourcc('m', 'p', '4', 'v');
 		int    width = 0, height = 0;
 		double fps = cap.get(cv::CAP_PROP_FPS);
+		if (fps <= 0) fps = 5;
 ///////////////////////////
 
 		int wait_time = 20;
