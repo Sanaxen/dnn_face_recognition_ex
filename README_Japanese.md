@@ -79,10 +79,14 @@ dnn_face_recognition_ex.exe [パラメータ] [コマンド]
 	- - 0:defaultの顔認識  
 	- - 1:CNN basedの顔認識  
 	- - 2:Resnet basedの顔認識  
-	
+
 - --video moving_image_file  
 	- - 入力を動画ファイルにします。  
-
+	
+- --no_show [0|1]  
+	- - 0: 画像・動画を表示する  
+	- - 1: 画像・動画を表示しない 　
+	- 
 ### コマンド  
 - --cap [username]  
 	- - 正面顔をカメラまたは画像からキャプチャしてcaptureフォルダに１０枚生成します。  

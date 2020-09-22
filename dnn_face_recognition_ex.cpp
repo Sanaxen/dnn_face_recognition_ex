@@ -30,6 +30,9 @@ int main(int argc, char** argv) try
 		printf("--dnn_face_detect [0|1]\n");
 		printf("        0:default\n");
 		printf("        1:CNN based face detector\n");
+		printf("--no_show [0|1]\n");
+		printf("        0:hide image window\n");
+		printf("        1:default\n");
 		printf("\n");
 		printf("============ command option ===========\n");
 		printf("--cap [username]\n");
@@ -47,6 +50,9 @@ int main(int argc, char** argv) try
 		return -1;
 	}
 
+	running_break();
+
+	int no_show = 0;
 	int camID = 0;
 	for ( int i = 1; i < argc; i++)
 	{
@@ -75,6 +81,12 @@ int main(int argc, char** argv) try
 			dnn_face_recognition_::video_file = std::string(argv[i + 1]);
 			i++;
 		}
+		if (std::string(argv[i]) == "--no_show")
+		{
+			dnn_face_recognition_::no_show = atoi(argv[i + 1]);
+			no_show = dnn_face_recognition_::no_show;
+			i++;
+		}
 		if (std::string(argv[i]) == "--dnn_face_detect")
 		{
 			dnn_face_recognition_::dnn_face_detection = atoi(argv[i + 1]);
@@ -93,13 +105,16 @@ int main(int argc, char** argv) try
 	{
 		if (std::string(argv[k]) == "--m")
 		{
+			clear_tmp_img();
 			printf("make_shape\n");
 			face_recognition_str fr;
 			printf("%d\n", make_shape(fr));
+			end_tmp_img();
 			exit(0);
 		}
 		if (std::string(argv[k]) == "--cap")
 		{
+			clear_tmp_img();
 			char* user_name = "";
 			if (argc > k+1) user_name = argv[k+1];
 			if (strstr(user_name, "--"))
@@ -110,12 +125,14 @@ int main(int argc, char** argv) try
 			{
 				printf("I couldn't capture the front facing face\n");
 			}
+			end_tmp_img();
 			exit(0);
 		}
 
 		if (std::string(argv[k]) == "--recog")
 		{
 			do {
+				clear_tmp_img();
 
 				face_recognition_str fr;
 				if (fr.init() != 0)
@@ -128,9 +145,13 @@ int main(int argc, char** argv) try
 				{
 					fr.result("result.txt");
 					draw_recgnition(fr.face_image, user_id, fr);
-					cv::imshow("", fr.face_image);
-					cv::waitKey(60 * 1000);
+					if (!no_show)
+					{
+						cv::imshow("", fr.face_image);
+						cv::waitKey(60 * 1000);
+					}
 				}
+				end_tmp_img();
 				cout << "press any key to continue.." << endl;
 				cin.get();
 			} while (1);
@@ -140,6 +161,7 @@ int main(int argc, char** argv) try
 		if (std::string(argv[k]) == "--image")
 		{
 			dnn_face_recognition_::tracking = false;
+			clear_tmp_img();
 
 			face_recognition_str fr;
 			if (fr.init() != 0)
@@ -151,13 +173,17 @@ int main(int argc, char** argv) try
 			if (!face_dir_check(fr.face_image, fr.detector, fr.sp68))
 			{
 				printf("You are not facing the front or you can see multiple people.\n");
+				end_tmp_img();
 				return 1;
 			}
 			std::vector<int>& user_id = face_recognition(fr);
 
 			fr.result("result.txt");
 			draw_recgnition(fr.face_image, user_id, fr);
-			cv::imshow("", fr.face_image);
+			if (!no_show)
+			{
+				cv::imshow("", fr.face_image);
+			}
 			cv::imwrite("output.png", fr.face_image);
 
 			cv::Mat match_user;
@@ -206,6 +232,7 @@ int main(int argc, char** argv) try
 					cv::imshow("-", match_user);
 				}
 			}
+			end_tmp_img();
 			//cv::waitKey(60 * 1000);
 			exit(0);
 		}
@@ -214,6 +241,7 @@ int main(int argc, char** argv) try
 		{
 			dnn_face_recognition_::tracking = false;
 			dnn_face_recognition_::one_person = true;
+			clear_tmp_img();
 
 			face_recognition_str fr;
 
@@ -337,8 +365,11 @@ int main(int argc, char** argv) try
 						cv::Mat cat = opencv_util::hconcat_ex(tmp, user);
 						cv::imwrite("tmp/error_" + std::to_string(i) + " .png", cat);
 
-						cv::imshow("-", cat);
-						cv::waitKey(10);
+						if (!no_show)
+						{
+							cv::imshow("-", cat);
+							cv::waitKey(10);
+						}
 						//cv::imwrite("tmp/error" + std::to_string(2*i) + " .png", tmp);
 						//cv::imwrite("tmp/error" + std::to_string(2*i+1) + " .png", user);
 					}
@@ -348,10 +379,12 @@ int main(int argc, char** argv) try
 			}
 			fprintf(fp, "%d,%d,%f\n", count, ok, 0);
 			fclose(fp);
+			end_tmp_img();
 			exit(0);
 		}
 	}
 
+	clear_tmp_img();
 
     // The first thing we are going to do is load all our models.  First, since we need to
     // find faces in the image we will need a face detector:
@@ -462,6 +495,7 @@ int main(int argc, char** argv) try
 		cv::Mat x = dlib::toMat(tile_images(temp)).clone();
 		cv::cvtColor(x, x, CV_RGB2BGR);
 		cv::imwrite(clipped, x);
+		if ( no_show )imgwrite_(x);
 		break;
 	}
 
@@ -478,6 +512,7 @@ int main(int argc, char** argv) try
     // If you use the model without jittering, as we did when clustering the bald guys, it
     // gets an accuracy of 99.13% on the LFW benchmark.  So jittering makes the whole
     // procedure a little more accurate but makes face descriptor calculation slower.
+	end_tmp_img();
 
 	char user_shape[256];
 	sprintf(user_shape, "user_shape/%s.txt", filename.c_str());

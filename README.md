@@ -84,6 +84,8 @@ You can also read a translated version of this file in [Japanese 日本語](http
     2:Resnet based face detector  
 - **`--video moving_image_file`**  
     Input will be a video file  
+- **`--no_show [0|1]`**  
+    0: show image window(default)  1:hide image window    
     
     
 ## command option  

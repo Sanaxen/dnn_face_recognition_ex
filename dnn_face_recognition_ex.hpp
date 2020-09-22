@@ -22,10 +22,14 @@
 #include "opencv_util.h"
 #include "dlib_util.h"
 #include "putText_Jpn/putText_Jpn.h"
-
+#include <filesystem>
 
 using namespace dlib;
 using namespace std;
+
+#define FEATURE_VECTOR_DIM	128
+#define UNKNOWON_FACE_ID	-1
+#define UNKNOWON_FACE_NAME "unknowon"
 
 // ----------------------------------------------------------------------------------------
 
@@ -70,11 +74,9 @@ using anet_type = loss_metric<fc_no_bias<128, avg_pool_everything<
 
 // ----------------------------------------------------------------------------------------
 
-#define UNKNOWON_FACE_ID	-1
-#define UNKNOWON_FACE_NAME "unknowon"
-
 namespace dnn_face_recognition_
 {
+	int no_show = 0;
 	int face_chk = 0;
 	bool one_person = false;
 	bool tracking = true;
@@ -84,6 +86,37 @@ namespace dnn_face_recognition_
 	int dnn_face_detection = 0;
 };
 
+inline std::vector<std::string> getFiles(std::string& dir, std::string ext1 = std::string(""), std::string ext2 = std::string(""))
+{
+	std::vector<std::string> file_paths;
+
+	for (const std::filesystem::directory_entry& de : std::filesystem::recursive_directory_iterator(dir)) 
+	{	
+		if (ext1 == "" && ext2 == "")
+		{
+			file_paths.emplace_back(de.path().string());
+			continue;
+		}else
+		if (ext1 != "" && ext2 == "")
+		{
+			if (strstr(de.path().string().c_str(), ext1.c_str()))
+			{
+				file_paths.emplace_back(de.path().string());
+			}
+			continue;
+		}
+		if (ext1 != "" && ext2 != "")
+		{
+			if (strstr(de.path().string().c_str(), ext1.c_str()) || strstr(de.path().string().c_str(), ext2.c_str()))
+			{
+				file_paths.emplace_back(de.path().string());
+			}
+			continue;
+		}
+	}
+
+	return file_paths;
+}
 
 inline void draw_face_rects(cv::Mat& image, const rectangle& rect, cv::Scalar& bgr, const std::string& name = std::string(""))
 {
@@ -273,6 +306,75 @@ inline void _putText(cv::Mat& img, const cv::String& text, const cv::Point& org,
 }
 #endif
 
+bool running_break()
+{
+	FILE* fp = fopen("break.run", "r");
+	if (fp)
+	{
+		fclose(fp);
+		remove("break.run");
+		return true;
+	}
+	return false;
+}
+
+int image_count = 0;
+inline void imgwrite_(const cv::Mat& img)
+{
+	char buf[256];
+	sprintf(buf, "tmp/tmp_%05d.png", image_count++);
+	cv::imwrite(buf, img);
+}
+inline void clear_tmp_img()
+{
+	int count = 0;
+
+	char buf[256];
+	do {
+#ifdef _WIN64
+		sprintf(buf, "tmp\\tmp_%05d.png", count);
+#else
+		sprintf(buf, "tmp/tmp_%05d.png", image_count);
+#endif
+		FILE* fp = fopen(buf, "r");
+		if (fp)
+		{
+			fclose(fp);
+			remove(buf);
+		}
+		else break;
+
+		count++;
+	} while (1);
+
+#ifdef _WIN64
+	FILE* fp = fopen("tmp\\end_image", "r");
+#else
+	FILE* fp = fopen("tmp/end_image", "r");
+#endif
+	if (fp)
+	{
+		fclose(fp);
+#ifdef _WIN64
+		sprintf(buf, "tmp\\end_image", image_count);
+#else
+		sprintf(buf, "tmp/end_image", image_count);
+#endif
+	}
+}
+inline void end_tmp_img()
+{
+#ifdef _WIN64
+	FILE* fp = fopen("tmp\\end_image", "r");
+#else
+	FILE* fp = fopen("tmp/end_image", "r");
+#endif
+	if (fp)
+	{
+		fclose(fp);
+		remove("tmp/end_image");
+	}
+}
 
 std::vector<matrix<rgb_pixel>> jitter_image(
 	const matrix<rgb_pixel>& img
@@ -280,6 +382,9 @@ std::vector<matrix<rgb_pixel>> jitter_image(
 
 inline int get_imagelist(std::vector<std::string>& imagelist)
 {
+#ifdef _HAS_CXX17
+	imagelist = getFiles(std::string("./images"), ".png", ".jpg");
+#else
 	FILE* fp = fopen("imagelist.txt", "r");
 	if (!fp)
 	{
@@ -294,12 +399,15 @@ inline int get_imagelist(std::vector<std::string>& imagelist)
 		imagelist.push_back("images/" + std::string(buf));
 	}
 	fclose(fp);
-
+#endif
 	return 0;
 }
 
 inline int get_shapelist(std::vector<std::string>& shapelist)
 {
+#ifdef _HAS_CXX17
+	shapelist = getFiles(std::string("./user_shape"), ".txt");
+#else
 	FILE* fp = fopen("shapelist.txt", "r");
 	if (!fp)
 	{
@@ -315,7 +423,7 @@ inline int get_shapelist(std::vector<std::string>& shapelist)
 		shapelist.push_back("user_shape/" + std::string(buf));
 	}
 	fclose(fp);
-
+#endif
 	return 1;
 }
 
@@ -331,11 +439,11 @@ inline std::vector<std::vector<float>> get_shapevalue_list(const std::vector<std
 		FILE* fp = fopen(shapelist[i].c_str(), "r");
 		if (fp)
 		{
-			char buf[128];
+			char buf[64];
 			std::vector<float> v;
-			for (int j = 0; j < 128; j++)
+			for (int j = 0; j < FEATURE_VECTOR_DIM; j++)
 			{
-				fgets(buf, 128, fp);
+				fgets(buf, 64, fp);
 				v.push_back(atof(buf));
 			}
 			shapevalue_list.push_back(v);
@@ -592,7 +700,7 @@ inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_
 inline float distance(const std::vector<float>& v1, const std::vector<float>& v2)
 {
 	float s = 0.0;
-	for (int j = 0; j < 128; j++)
+	for (int j = 0; j < FEATURE_VECTOR_DIM; j++)
 	{
 		s += (v1[j] - v2[j])*(v1[j] - v2[j]);
 	}
@@ -602,7 +710,7 @@ inline float distance(const std::vector<float>& v1, const std::vector<float>& v2
 inline float cos_distance(const std::vector<float>& v1, const std::vector<float>& v2)
 {
 	float cos_dist = 0.0;
-	for (int j = 0; j < 128; j++)
+	for (int j = 0; j < FEATURE_VECTOR_DIM; j++)
 	{
 		cos_dist += v1[j] * v2[j];
 	}
@@ -841,8 +949,11 @@ inline std::vector<int> face_recognition(face_recognition_str& face_recog_image)
 		//cv::cvtColor(x, x, CV_RGB2BGR);
 		if (!dnn_face_recognition_::tracking)
 		{
-			cv::imshow("", x);
-			cv::waitKey(1);
+			if (!dnn_face_recognition_::no_show)
+			{
+				cv::imshow("", x);
+				cv::waitKey(1);
+			}
 		}
 
 
@@ -954,8 +1065,15 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 				sprintf(time_count, "count %d", wait_time - count);
 				cv::Mat temp2 = temp.clone();
 				cv::putText(temp2, time_count, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX, 3, cv::Scalar(1, 1, 1), 3);
-				cv::imshow("", temp2);
-				if (cv::waitKey(1) == 27) break;
+				if (!dnn_face_recognition_::no_show)
+				{
+					cv::imshow("", temp2);
+					if (cv::waitKey(1) == 27) break;
+				}else
+				{
+					imgwrite_(temp2);
+					if (running_break()) break;
+				}
 				if (count < wait_time)
 				{
 					count++;
@@ -966,6 +1084,7 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 					printf("You are not facing the front or you can see multiple people.\n");
 					count++;
 					writer << temp;
+					if (dnn_face_recognition_::no_show)imgwrite_(temp);
 					continue;
 				}
 			}
@@ -978,17 +1097,32 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 
 			if (user_id.size() == 0)
 			{
-				cv::imshow("", temp);
 				writer << temp;
-				if (cv::waitKey(1) == 27) break;
+				if (!dnn_face_recognition_::no_show)
+				{
+					cv::imshow("", temp);
+					if (cv::waitKey(1) == 27) break;
+				}
+				else
+				{
+					imgwrite_(temp);
+					if (running_break()) break;
+				}
 				continue;
 			}
 			if (dnn_face_recognition_::tracking)
 			{
 				draw_recgnition(temp, user_id, face_recog_image);
-				cv::imshow("", temp);
 				writer << temp;
-				if (cv::waitKey(1) == 27) break;
+				if (!dnn_face_recognition_::no_show)
+				{
+					cv::imshow("", temp);
+					if (cv::waitKey(1) == 27) break;
+				}else
+				{
+					imgwrite_(temp);
+					if (running_break()) break;
+				}
 				continue;
 			}
 			return users;
@@ -1244,9 +1378,16 @@ inline int cam2face_shape(char* user, int camID = 0)
 			draw_face(temp, dets[0], render_face_detections(shapes), circle);
 			cout << "render_face_detections(shapes): " << render_face_detections(shapes).size() << endl;
 
-			cv::imshow("render_face_detections", temp);
-			if ( cv::waitKey(1) == 27 ) break;
-
+			if (!dnn_face_recognition_::no_show)
+			{
+				cv::imshow("render_face_detections", temp);
+				if (cv::waitKey(1) == 27) break;
+			}
+			else
+			{
+				imgwrite_(temp);
+				if (running_break()) break;
+			}
 			temp = dlib::toMat(img);
 			try
 			{
@@ -1256,7 +1397,10 @@ inline int cam2face_shape(char* user, int camID = 0)
 						dets[0].width(), dets[0].height()
 					)
 				);
-				cv::imshow("cap", roi_img);
+				if (!dnn_face_recognition_::no_show)
+				{
+					cv::imshow("cap", roi_img);
+				}
 				if (error_code == 0)
 				{
 					char capimage_file[256];
@@ -1265,6 +1409,12 @@ inline int cam2face_shape(char* user, int camID = 0)
 					cv::imwrite(capimage_file, roi_img);
 					if (cv::waitKey(1) == 27) break;
 					//if ( count == 10 ) return error_code;
+
+					if (dnn_face_recognition_::no_show)
+					{
+						imgwrite_(temp);
+						if (running_break()) break;
+					}
 				}
 			}
 			catch (std::exception& e)
