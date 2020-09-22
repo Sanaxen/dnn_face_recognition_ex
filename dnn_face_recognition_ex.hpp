@@ -72,6 +72,7 @@ using anet_type = loss_metric<fc_no_bias<128, avg_pool_everything<
 
 #define UNKNOWON_FACE_ID	-1
 #define UNKNOWON_FACE_NAME "unknowon"
+
 namespace dnn_face_recognition_
 {
 	int face_chk = 0;
@@ -397,18 +398,18 @@ public:
 	face_recognition_str()
 	{
 		detector = get_frontal_face_detector();
-		deserialize("db/shape_predictor_5_face_landmarks.dat") >> sp;
-		deserialize("db/dlib_face_recognition_resnet_model_v1.dat") >> net;
-		deserialize("db/shape_predictor_68_face_landmarks.dat") >> sp68;
+		deserialize("model/shape_predictor_5_face_landmarks.dat") >> sp;
+		deserialize("model/dlib_face_recognition_resnet_model_v1.dat") >> net;
+		deserialize("model/shape_predictor_68_face_landmarks.dat") >> sp68;
 
 		if (dnn_face_recognition_::dnn_face_detection == 1)
 		{
-			deserialize("db/mmod_human_face_detector.dat") >> detect_net;
+			deserialize("model/mmod_human_face_detector.dat") >> detect_net;
 		}
 		if (dnn_face_recognition_::dnn_face_detection == 2)
 		{
-			cv::String modelConfiguration = "db/res10/deploy.prototxt";
-			cv::String modelBinary = "db/res10/res10_300x300_ssd_iter_140000.caffemodel";
+			cv::String modelConfiguration = "model/res10/deploy.prototxt";
+			cv::String modelBinary = "model/res10/res10_300x300_ssd_iter_140000.caffemodel";
 
 			res10net = cv::dnn::readNetFromCaffe(modelConfiguration, modelBinary);
 			if (res10net.empty())
@@ -1178,7 +1179,7 @@ inline int cam2face_shape(char* user, int camID = 0)
 	{
 		frontal_face_detector detector = get_frontal_face_detector();
 		shape_predictor sp68;
-		deserialize("db/shape_predictor_68_face_landmarks.dat") >> sp68;
+		deserialize("model/shape_predictor_68_face_landmarks.dat") >> sp68;
 
 		cv::VideoCapture cap;
 
