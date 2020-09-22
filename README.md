@@ -1,4 +1,5 @@
 # dnn_face_recognition_ex  
+You can also read a translated version of this file in [Japanese 日本語](https://github.com/Sanaxen/dnn_face_recognition_ex/blob/master/README_Japanese.md).
 
 ### identified people correctly in almost everything..  <img src="./images/output.png"/>  
 the threshold is 0.31.This is not a very good value.  
@@ -65,7 +66,9 @@ It recognizes the face of a person in the camera and obtains the feature vector 
 If the same feature vector as the feature vector matches any of the feature vectors in shaplist.txt, it is judged as a registered face.  
 <img src="./images/image07.png"/>  
 
-# command line option
+# command line option  
+You can also read a translated version of this file in [Japanese 日本語](https://github.com/Sanaxen/dnn_face_recognition_ex/blob/master/command_line_Japanese.md).
+
 `dnn_face_recognition_ex.exe [parameter option] [command option]`
 ## parameter option
 - **`--t value`**  
