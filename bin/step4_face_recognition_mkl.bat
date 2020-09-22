@@ -1,1 +1,1 @@
-call face_recognition_mkl.bat --recog %1 %2 %3 %4
+call face_recognition_mkl.bat %1 %2 %3 %4 %5 %6 %7 %8 %9  --recog 
