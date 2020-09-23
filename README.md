@@ -97,7 +97,8 @@ You can also read a translated version of this file in [Japanese 日本語](http
     real time camera image -> face recognition
 - **`--image imagefile[.png|.jpg]`**  
     imagefile -> face recognition
-
+- **`--vector 128dim_vector.txt`**  
+    128dim_vector -> face recognition
     
 `dnn_face_recognition_ex.exe imagefile[.png|.jpg]`  
    imagefile -> user_shape/imagefile.txt

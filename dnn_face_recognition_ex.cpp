@@ -33,6 +33,9 @@ int main(int argc, char** argv) try
 		printf("--no_show [0|1]\n");
 		printf("        0:hide image window\n");
 		printf("        1:default\n");
+		printf("--num_jitters num\n");
+		printf("        num>=0 (default:100) How many times to re-sample the face when calculating encoding. \n");
+		printf("        Higher is more accurate, but slower (i.e. 100 is 100x slower)\n");
 		printf("\n");
 		printf("============ command option ===========\n");
 		printf("--cap [username]\n");
@@ -43,6 +46,8 @@ int main(int argc, char** argv) try
 		printf("       real time camera image -> face recognition\n");
 		printf("--image imagefile[.png|.jpg]\n");
 		printf("       imagefile -> face recognition\n");
+		printf("--vector vector.txt\n");
+		printf("       vector.txt -> face recognition\n");
 		printf("\n");
 		printf("imagefile[.png|.jpg] ->(output) user_shape/imagefile.txt\n");
 		printf("moving_image_file->(output) user_shape/imagefile.txt\n");
@@ -52,6 +57,7 @@ int main(int argc, char** argv) try
 
 	running_break();
 
+	int num_jitters = NUM_JITTERS;
 	int no_show = 0;
 	int camID = 0;
 	for ( int i = 1; i < argc; i++)
@@ -85,6 +91,12 @@ int main(int argc, char** argv) try
 		{
 			dnn_face_recognition_::no_show = atoi(argv[i + 1]);
 			no_show = dnn_face_recognition_::no_show;
+			i++;
+		}
+		if (std::string(argv[i]) == "--num_jitters")
+		{
+			dnn_face_recognition_::num_jitters = atoi(argv[i + 1]);
+			num_jitters = dnn_face_recognition_::num_jitters;
 			i++;
 		}
 		if (std::string(argv[i]) == "--dnn_face_detect")
@@ -229,7 +241,82 @@ int main(int argc, char** argv) try
 				}
 				if (!match_user.empty())
 				{
-					cv::imshow("-", match_user);
+					if ( !no_show ) cv::imshow("-", match_user);
+				}
+			}
+			end_tmp_img();
+			//cv::waitKey(60 * 1000);
+			exit(0);
+		}
+
+		if (std::string(argv[k]) == "--vector")
+		{
+			dnn_face_recognition_::tracking = false;
+			clear_tmp_img();
+
+			face_recognition_str fr;
+			if (fr.init() != 0)
+			{
+				return -1;
+			}
+
+			fr.reset();
+
+			std::vector<float>& vector = fr.get_shapevalue(std::string(argv[k+1]));
+			std::vector<std::vector<float>> vectors;
+			vectors.push_back(vector);
+
+			fr.dist.resize(vector.size());
+			fr.cos_dist.resize(vector.size());
+
+			std::vector<int>& user_id = face_compare(fr, vectors);
+
+			fr.result("result.txt");
+
+			cv::Mat match_user;
+			for (int i = 0; i < user_id.size(); i++)
+			{
+				std::string name;
+				if (fr.dist[i] > 0.2)
+				{
+					std::string pathname;
+					std::string extname;
+					if (user_id[i] == UNKNOWON_FACE_ID)
+					{
+						name = std::string(UNKNOWON_FACE_NAME);
+					}
+					else
+					{
+						name = getFilename(fr.shapelist[user_id[i]], pathname, extname);
+					}
+					std::string img = "images/" + name + ".png";
+					try
+					{
+						cv::Mat tmp = cv::imread(img);
+						if (tmp.empty())
+						{
+							img = "images/" + name + ".jpg";
+							tmp = cv::imread(img);
+						}
+						if (tmp.empty())
+						{
+							continue;
+						}
+						if (match_user.empty()) match_user = tmp.clone();
+						else match_user = opencv_util::hconcat_ex(match_user, tmp);
+					}
+					catch (std::exception& e)
+					{
+						cout << e.what() << endl;
+					}
+					catch (...)
+					{
+						continue;
+					}
+				}
+				if (!match_user.empty())
+				{
+					if (!no_show) cv::imshow("-", match_user);
 				}
 			}
 			end_tmp_img();
@@ -396,10 +483,64 @@ int main(int argc, char** argv) try
     anet_type net;
     deserialize("model/dlib_face_recognition_resnet_model_v1.dat") >> net;
 
+	int arg_idx = 1;
+	for (int i = 1; i < argc; i++)
+	{
+		if (std::string(argv[i]) == "--camID")
+		{
+			i++;
+			continue;
+		}else
+		if (std::string(argv[i]) == "--face_chk")
+		{
+			i++;
+			continue;
+		}else
+		if (std::string(argv[i]) == "--t")
+		{
+			i++;
+			continue;
+		}else
+		if (std::string(argv[i]) == "--one_person")
+		{
+			i++;
+			continue;
+		}else
+		if (std::string(argv[i]) == "--video")
+		{
+			i++;
+			continue;
+		}
+		else
+		if (std::string(argv[i]) == "--no_show")
+		{
+			i++;
+			continue;
+		}
+		else
+		if (std::string(argv[i]) == "--num_jitters")
+		{
+			i++;
+			continue;
+		}
+		else
+		if (std::string(argv[i]) == "--dnn_face_detect")
+		{
+			i++;
+			continue;
+		}
+		else
+		{
+			arg_idx = i;
+			break;
+		}
+	}
+
     matrix<rgb_pixel> img;
 	try
 	{
-		load_image(img, argv[1]);
+		printf("image file[%s]\n", argv[arg_idx]);
+		load_image(img, argv[arg_idx]);
 	}
 	catch (std::exception& e)
 	{
@@ -466,7 +607,7 @@ int main(int argc, char** argv) try
     cout << "number of people found in the image: "<< num_clusters << endl;
 
 
-	std::string fullpath = std::string(argv[1]);
+	std::string fullpath = std::string(argv[arg_idx]);
 	int path_i = 0;
 	if ( strchr(fullpath.c_str(), '\\')) path_i = fullpath.find_last_of("\\") + 1;//7
 	else path_i = fullpath.find_last_of("/") + 1;//7
@@ -545,21 +686,6 @@ catch (std::exception& e)
 
 // ----------------------------------------------------------------------------------------
 
-std::vector<matrix<rgb_pixel>> jitter_image(
-    const matrix<rgb_pixel>& img
-)
-{
-    // All this function does is make 100 copies of img, all slightly jittered by being
-    // zoomed, rotated, and translated a little bit differently. They are also randomly
-    // mirrored left to right.
-    thread_local dlib::rand rnd;
-
-    std::vector<matrix<rgb_pixel>> crops; 
-    for (int i = 0; i < 100; ++i)
-        crops.push_back(jitter_image(img,rnd));
-
-    return crops;
-}
 
 // ----------------------------------------------------------------------------------------
 

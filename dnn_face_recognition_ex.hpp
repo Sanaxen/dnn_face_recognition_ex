@@ -27,6 +27,7 @@
 using namespace dlib;
 using namespace std;
 
+#define NUM_JITTERS			100
 #define FEATURE_VECTOR_DIM	128
 #define UNKNOWON_FACE_ID	-1
 #define UNKNOWON_FACE_NAME "unknowon"
@@ -84,6 +85,7 @@ namespace dnn_face_recognition_
 	std::string video_file = "";
 
 	int dnn_face_detection = 0;
+	int num_jitters = NUM_JITTERS;
 };
 
 inline std::vector<std::string> getFiles(std::string& dir, std::string ext1 = std::string(""), std::string ext2 = std::string(""))
@@ -234,77 +236,6 @@ inline std::string getUserName(const char* name)
 	return std::string(_name);
 }
 
-#ifdef USE_JAPANESE_CHAR
-inline void _putText(cv::Mat& img, const cv::String& text, const cv::Point& org, const char* fontname, double fontScale, cv::Scalar color)
-{
-	int fontSize = (int)(10 * fontScale); // 10 is suitable
-	int width = img.cols;
-	int height = fontSize * 3 / 2; // Height is 1.5 times the font size
-
-	HDC hdc = ::CreateCompatibleDC(NULL);
-
-	BITMAPINFOHEADER header;
-	::ZeroMemory(&header, sizeof(BITMAPINFOHEADER));
-	header.biSize = sizeof(BITMAPINFOHEADER);
-	header.biWidth = width;
-	header.biHeight = height;
-	header.biPlanes = 1;
-	header.biBitCount = 24;
-	BITMAPINFO bitmapInfo;
-	bitmapInfo.bmiHeader = header;
-	HBITMAP hbmp = ::CreateDIBSection(NULL, (LPBITMAPINFO)&bitmapInfo, DIB_RGB_COLORS, NULL, NULL, 0);
-	::SelectObject(hdc, hbmp);
-
-	BITMAP  bitmap;
-	::GetObject(hbmp, sizeof(BITMAP), &bitmap);
-
-	int back_color = 0x99;
-	int memSize = (((bitmap.bmBitsPixel / 8) * width) & ~3) * height;
-	std::memset(bitmap.bmBits, back_color, memSize);
-
-	HFONT hFont = ::CreateFontA(
-		fontSize, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
-		SHIFTJIS_CHARSET, OUT_DEFAULT_PRECIS,
-		CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-		VARIABLE_PITCH | FF_ROMAN, fontname);
-	::SelectObject(hdc, hFont);
-
-	::TextOutA(hdc, 0, height / 3 * 1, text.c_str(), (int)text.length());
-
-	int posX = org.x;
-	int posY = org.y - fontSize;
-
-	unsigned char* _tmp;
-	unsigned char* _img;
-	for (int y = 0; y < bitmap.bmHeight; y++) {
-		if (posY + y >= 0 && posY + y < img.rows) {
-			_img = img.data + (int)(3 * posX + (posY + y) * (((bitmap.bmBitsPixel / 8) * img.cols) & ~3));
-			_tmp = (unsigned char*)(bitmap.bmBits) + (int)((bitmap.bmHeight - y - 1) * (((bitmap.bmBitsPixel / 8) * bitmap.bmWidth) & ~3));
-			for (int x = 0; x < bitmap.bmWidth; x++) {
-				if (x + posX >= img.cols) {
-					break;
-				}
-				if (_tmp[0] == 0 && _tmp[1] == 0 && _tmp[2] == 0) {
-					_img[0] = (unsigned char)color.val[0];
-					_img[1] = (unsigned char)color.val[1];
-					_img[2] = (unsigned char)color.val[2];
-				}
-				_img += 3;
-				_tmp += 3;
-			}
-		}
-	}
-
-	::DeleteObject(hFont);
-	::DeleteObject(hbmp);
-	::DeleteDC(hdc);
-}
-#else
-inline void _putText(cv::Mat& img, const cv::String& text, const cv::Point& org, const char* fontname, double fontScale, cv::Scalar color)
-{
-	cv::putText(img, text, org, cv::FONT_HERSHEY_PLAIN, fontScale, color);
-}
-#endif
 
 bool running_break()
 {
@@ -327,6 +258,7 @@ inline void imgwrite_(const cv::Mat& img)
 }
 inline void clear_tmp_img()
 {
+	image_count = 0;
 	int count = 0;
 
 	char buf[256];
@@ -376,102 +308,6 @@ inline void end_tmp_img()
 	}
 }
 
-std::vector<matrix<rgb_pixel>> jitter_image(
-	const matrix<rgb_pixel>& img
-);
-
-inline int get_imagelist(std::vector<std::string>& imagelist)
-{
-#ifdef _HAS_CXX17
-	imagelist = getFiles(std::string("./images"), ".png", ".jpg");
-#else
-	FILE* fp = fopen("imagelist.txt", "r");
-	if (!fp)
-	{
-		return -1;
-	}
-
-	char buf[256];
-	while (fgets(buf, 256, fp) != NULL)
-	{
-		char* p = strchr(buf, '\n');
-		if (p) *p = '\0';
-		imagelist.push_back("images/" + std::string(buf));
-	}
-	fclose(fp);
-#endif
-	return 0;
-}
-
-inline int get_shapelist(std::vector<std::string>& shapelist)
-{
-#ifdef _HAS_CXX17
-	shapelist = getFiles(std::string("./user_shape"), ".txt");
-#else
-	FILE* fp = fopen("shapelist.txt", "r");
-	if (!fp)
-	{
-		return 0;
-	}
-
-	char buf[256];
-	while (fgets(buf, 256, fp) != NULL)
-	{
-		char* p = strchr(buf, '\n');
-		if (p) *p = '\0';
-		if (buf[0] == '\0') continue;
-		shapelist.push_back("user_shape/" + std::string(buf));
-	}
-	fclose(fp);
-#endif
-	return 1;
-}
-
-inline std::vector<std::vector<float>> get_shapevalue_list(const std::vector<std::string>& shapelist)
-{
-	std::vector<std::vector<float>> shapevalue_list;
-
-	int n = shapelist.size() / 80;
-	for (int i = 0; i < shapelist.size(); i++)
-	{
-		printf("                                                             \r");
-		printf("%d/%d", i, shapelist.size() - 1);
-		FILE* fp = fopen(shapelist[i].c_str(), "r");
-		if (fp)
-		{
-			char buf[64];
-			std::vector<float> v;
-			for (int j = 0; j < FEATURE_VECTOR_DIM; j++)
-			{
-				fgets(buf, 64, fp);
-				v.push_back(atof(buf));
-			}
-			shapevalue_list.push_back(v);
-			fclose(fp);
-		}
-	}
-	printf("                                                             \r");
-	printf("\ndone.\n");
-	return shapevalue_list;
-}
-
-inline int load_shapelist(std::vector<std::string>& shapelist, std::vector<std::vector<float>>& shapevalue_list)
-{
-	if (shapelist.size() == 0)
-	{
-		if (!get_shapelist(shapelist)) return -1;
-
-		printf("target users=%d\n", shapelist.size());
-	}
-
-	if (shapevalue_list.size() == 0)
-	{
-		printf("loading[shape features]...");
-		shapevalue_list = get_shapevalue_list(shapelist);
-		printf("number of users=%d\n", shapevalue_list.size());
-	}
-	return 0;
-}
 
 class face_recognition_str
 {
@@ -482,6 +318,7 @@ public:
 	shape_predictor			sp;
 	shape_predictor			sp68;
 	anet_type				net;
+	int						num_jitters = NUM_JITTERS;
 	std::vector<std::string> shapelist;
 	std::vector<std::vector<float>> shapevalue_list;
 	std::vector<float> dist;
@@ -539,7 +376,7 @@ public:
 	{
 		if (shapelist.size() == 0)
 		{
-			if (load_shapelist(shapelist, shapevalue_list) != 0)
+			if (load_shapelist() != 0)
 			{
 				return -1;
 			}
@@ -566,15 +403,144 @@ public:
 				user_name = getFilename(shapelist[result_id[i]].c_str(), pathname, extname);
 			}
 
-			fprintf(fp, "%s	dist=	%.4f	cos=	%.4f	rect=	%d	%d	%d	%d\n", 
-				user_name.c_str(), dist[i], cos_dist[i],
-				rects[i].bl_corner().x(), rects[i].bl_corner().y(),
-				rects[i].tr_corner().x(), rects[i].tr_corner().y());
+			if (rects.size() > 0)
+			{
+				fprintf(fp, "%s	dist=	%.4f	cos=	%.4f	rect=	%d	%d	%d	%d\n",
+					user_name.c_str(), dist[i], cos_dist[i],
+					rects[i].bl_corner().x(), rects[i].bl_corner().y(),
+					rects[i].tr_corner().x(), rects[i].tr_corner().y());
+			}
+			else
+			{
+				fprintf(fp, "%s	dist=	%.4f	cos=	%.4f	rect=	NA	NA	NA	NA\n",
+					user_name.c_str(), dist[i], cos_dist[i]);
+			}
+			printf("%s	dist=	%.4f	cos=	%.4f\n",
+				user_name.c_str(), dist[i], cos_dist[i]);
 		}
 		fclose(fp);
 		return 0;
 	}
+	inline int get_imagelist(std::vector<std::string>& imagelist)
+	{
+#ifdef _HAS_CXX17
+		imagelist = getFiles(std::string("./images"), ".png", ".jpg");
+#else
+		FILE* fp = fopen("imagelist.txt", "r");
+		if (!fp)
+		{
+			return -1;
+		}
+
+		char buf[256];
+		while (fgets(buf, 256, fp) != NULL)
+		{
+			char* p = strchr(buf, '\n');
+			if (p) *p = '\0';
+			imagelist.push_back("images/" + std::string(buf));
+		}
+		fclose(fp);
+#endif
+		return 0;
+	}
+
+	inline int get_shapelist()
+	{
+#ifdef _HAS_CXX17
+		shapelist = getFiles(std::string("./user_shape"), ".txt");
+#else
+		FILE* fp = fopen("shapelist.txt", "r");
+		if (!fp)
+		{
+			return 0;
+		}
+
+		char buf[256];
+		while (fgets(buf, 256, fp) != NULL)
+		{
+			char* p = strchr(buf, '\n');
+			if (p) *p = '\0';
+			if (buf[0] == '\0') continue;
+			shapelist.push_back("user_shape/" + std::string(buf));
+		}
+		fclose(fp);
+#endif
+		return 1;
+	}
+
+	inline std::vector<float> get_shapevalue(std::string& vector_file)
+	{
+		std::vector<float> v;
+
+		FILE* fp = fopen(vector_file.c_str(), "r");
+		if (fp)
+		{
+			char buf[64];
+			for (int j = 0; j < FEATURE_VECTOR_DIM; j++)
+			{
+				fgets(buf, 64, fp);
+				v.push_back(atof(buf));
+			}
+			fclose(fp);
+		}
+
+		return v;
+	}
+
+	inline std::vector<std::vector<float>> get_shapevalue_list()
+	{
+		int n = shapelist.size() / 80;
+		for (int i = 0; i < shapelist.size(); i++)
+		{
+			printf("                                                             \r");
+			printf("%d/%d", i, shapelist.size() - 1);
+			shapevalue_list.push_back(get_shapevalue(shapelist[i]));
+		}
+		printf("                                                             \r");
+		printf("\ndone.\n");
+		return shapevalue_list;
+	}
+
+	inline int load_shapelist()
+	{
+		if (shapelist.size() == 0)
+		{
+			if (!get_shapelist()) return -1;
+
+			printf("target users=%d\n", shapelist.size());
+		}
+
+		if (shapevalue_list.size() == 0)
+		{
+			printf("loading[shape features]...");
+			shapevalue_list = get_shapevalue_list();
+			printf("number of users=%d\n", shapevalue_list.size());
+		}
+		return 0;
+	}
 };
+
+inline std::vector<matrix<rgb_pixel>> jitter_image(
+	const matrix<rgb_pixel>& img,  int num_jitters = 100
+)
+{
+	// All this function does is make 100 copies of img, all slightly jittered by being
+	// zoomed, rotated, and translated a little bit differently. They are also randomly
+	// mirrored left to right.
+	thread_local dlib::rand rnd;
+
+	std::vector<matrix<rgb_pixel>> crops;
+	if (num_jitters == 0)
+	{
+		crops.push_back(img);
+		return crops;
+	}
+	for (int i = 1; i < 100; ++i)
+	{
+		crops.push_back(jitter_image(img, rnd));
+	}
+	return crops;
+}
 
 inline std::vector<full_object_detection> face_shape_predictor(dlib::array2d<bgr_pixel>& img, std::vector<rectangle>& dets, shape_predictor& sp);
 inline std::vector<image_window::overlay_circle> render_face_detections2(
@@ -807,6 +773,30 @@ inline void draw_recgnition(cv::Mat& face_image, const std::vector<int>& user_id
 	}
 }
 
+inline std::vector<int> face_compare(face_recognition_str& fr, std::vector < std::vector<float>>& recog_faces_fvector)
+{
+	std::vector<int>& recog_faces = fr.result_id;
+	for (int i = 0; i < recog_faces_fvector.size(); i++)
+	{
+		printf(" shapevalue_list.size()=%d\n", fr.shapevalue_list.size());
+		printf(" recog_faces_fvector.size()=%d\n", recog_faces_fvector.size());
+		int id = -1;
+		float mindist = distance(recog_faces_fvector[i], fr.shapevalue_list, id, fr.cos_dist[i]);
+		printf("id:%d %f\n", id, mindist);
+		fr.dist[i] = mindist;
+
+		printf("%f\n", dnn_face_recognition_::collation_judgmentthreshold);
+		if (id >= 0 && fr.dist[i] < dnn_face_recognition_::collation_judgmentthreshold)
+		{
+			recog_faces.push_back(id);
+		}
+		else
+		{
+			recog_faces.push_back(UNKNOWON_FACE_ID);
+		}
+	}
+	return recog_faces;
+}
 
 inline std::vector<int> face_recognition(face_recognition_str& face_recog_image)
 {
@@ -961,32 +951,16 @@ inline std::vector<int> face_recognition(face_recognition_str& face_recog_image)
 		std::vector < std::vector<float>> recog_faces_fvector;
 		for (auto &face : faces)
 		{
-			matrix<float, 0, 1> face_descriptor = mean(mat(face_recog_image.net(jitter_image(face))));
+			matrix<float, 0, 1> face_descriptor = mat(face_recog_image.net(face));
+			//matrix<float, 0, 1> face_descriptor = mean(mat(face_recog_image.net(jitter_image(face))));
 			//cout << "jittered face descriptor for one face: " << trans(face_descriptor) << endl;
 			recog_faces_fvector.push_back(std::vector<float>(face_descriptor.begin(), face_descriptor.end()));
 		}
 
 		face_recog_image.dist.resize(recog_faces_fvector.size());
 		face_recog_image.cos_dist.resize(recog_faces_fvector.size());
+		recog_faces = face_compare(face_recog_image, recog_faces_fvector);
 
-		for (int i = 0; i < recog_faces_fvector.size(); i++)
-		{
-			//printf(" shapevalue_list.size()=%d\n", face_recog_image.shapevalue_list.size());
-			int id = -1;
-			float mindist = distance(recog_faces_fvector[i], face_recog_image.shapevalue_list, id, face_recog_image.cos_dist[i]);
-			//printf("id:%d %f\n", id, mindist);
-			face_recog_image.dist[i] = mindist;
-
-			//printf("%f\n", dnn_face_recognition_::collation_judgmentthreshold);
-			if (id >= 0 && face_recog_image.dist[i] < dnn_face_recognition_::collation_judgmentthreshold)
-			{
-				recog_faces.push_back(id);
-			}
-			else
-			{
-				recog_faces.push_back(UNKNOWON_FACE_ID);
-			}
-		}
 	}
 	catch (std::exception& e)
 	{
@@ -1148,7 +1122,7 @@ inline std::string webcam_face_recognition(int camID = 0)
 
 		if (fr.shapelist.size() == 0)
 		{
-			if (load_shapelist(fr.shapelist, fr.shapevalue_list) != 0)
+			if (fr.load_shapelist() != 0)
 			{
 				return "unknown";
 			}
@@ -1169,7 +1143,7 @@ inline std::string webcam_face_recognition(int camID = 0)
 inline int make_shape(face_recognition_str fr)
 {
 	std::vector<std::string> imagelist;
-	if (get_imagelist(imagelist) < 0) return -1;
+	if (fr.get_imagelist(imagelist) < 0) return -1;
 
 	printf("imagelist:%d\n", imagelist.size());
 
@@ -1219,7 +1193,7 @@ inline int make_shape(face_recognition_str fr)
 
 		// Now let's display the face clustering results on the screen.  You will see that it
 		// correctly grouped all the faces. 
-		std::vector<image_window> win_clusters(num_clusters);
+		//std::vector<image_window> win_clusters(num_clusters);
 		for (size_t cluster_id = 0; cluster_id < num_clusters; ++cluster_id)
 		{
 			std::vector<matrix<rgb_pixel>> temp;
@@ -1228,8 +1202,8 @@ inline int make_shape(face_recognition_str fr)
 				if (cluster_id == labels[j])
 					temp.push_back(faces[j]);
 			}
-			win_clusters[cluster_id].set_title("face cluster " + cast_to_string(cluster_id));
-			win_clusters[cluster_id].set_image(tile_images(temp));
+			//win_clusters[cluster_id].set_title("face cluster " + cast_to_string(cluster_id));
+			//win_clusters[cluster_id].set_image(tile_images(temp));
 
 			char clipped[256];
 			if (cluster_id == 0)

@@ -99,6 +99,8 @@ dnn_face_recognition_ex.exe [パラメータ] [コマンド]
 
 - --image imagefile[.png|.jpg]  
 	- - 画像ファイルから顔認証  
-
+- --vector 128dim_vector.txt  
+    - - 特徴ベクトルファイルから顔認証  
+    
 #### コマンドラインオプションが画像ファイルだけの場合  
 - user_shapeホルダーに登録者の顔特徴ベクトルにエンコードしたファイルを生成  
