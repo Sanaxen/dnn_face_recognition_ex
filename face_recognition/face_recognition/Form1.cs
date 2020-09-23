@@ -22,6 +22,7 @@ namespace face_recognition
         {
             InitializeComponent();
             MyPath = System.AppDomain.CurrentDomain.BaseDirectory;
+            cuDir = System.IO.Directory.GetCurrentDirectory();
         }
 
         public static System.Drawing.Image CreateImage(string filename)
@@ -83,6 +84,7 @@ namespace face_recognition
                     break;
                 }
             } while (true);
+            image_count = 0;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -137,6 +139,8 @@ namespace face_recognition
                     System.IO.File.Delete(filename);
                 }
                 System.IO.File.Create(filename);
+                //await System.Threading.Tasks.Task.Delay(2000);
+                System.Threading.Thread.Sleep(2000);
             }
             catch { }
 
@@ -190,7 +194,6 @@ namespace face_recognition
             app.Arguments = " " + "--no_show 1";
             app.Arguments += " " + "--image";
             app.Arguments += " " + openFileDialog2.FileName;
-            app.Arguments += " " + "--recog";
             app.UseShellExecute = true;
             app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
 
