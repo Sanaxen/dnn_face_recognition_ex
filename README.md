@@ -86,7 +86,9 @@ You can also read a translated version of this file in [Japanese 日本語](http
     Input will be a video file  
 - **`--no_show [0|1]`**  
     0: show image window(default)  1:hide image window    
-    
+- **`--num_gitters value`**  
+    How many times to re-sample the face when calculating encoding. Higher is more accurate, but slower (i.e. 100 is 100x slower)    
+        
     
 ## command option  
 - **`--cap [username]`**  

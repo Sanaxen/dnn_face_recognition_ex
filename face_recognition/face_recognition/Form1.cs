@@ -23,6 +23,12 @@ namespace face_recognition
             InitializeComponent();
             MyPath = System.AppDomain.CurrentDomain.BaseDirectory;
             cuDir = System.IO.Directory.GetCurrentDirectory();
+
+            button1.Enabled = true;    //camera
+            button2.Enabled = false;   //stop
+            button3.Enabled = true;    //movie
+            button4.Enabled = true;    //image
+            button5.Enabled = true;    //add user
         }
 
         public static System.Drawing.Image CreateImage(string filename)
@@ -51,7 +57,24 @@ namespace face_recognition
                 process.Kill();
                 //KillProcessTree(process);
                 process = null;
+
+                button1.Enabled = true;    //camera
+                button2.Enabled = false;     //stop
+                button3.Enabled = true;    //movie
+                button4.Enabled = true;    //image
+                button5.Enabled = true;    //add user
+
             }
+            string filename = cuDir + "\\break.run";
+            try
+            {
+                if (System.IO.File.Exists(filename))
+                {
+                    System.IO.File.Delete(filename);
+                }
+            }
+            catch { }
+
             timer1.Stop();
         }
 
@@ -85,19 +108,56 @@ namespace face_recognition
                 }
             } while (true);
             image_count = 0;
+
+            string filename2 = cuDir + "\\break.run";
+            try
+            {
+                if (System.IO.File.Exists(filename2))
+                {
+                    System.IO.File.Delete(filename2);
+                }
+            }
+            catch { }
+        }
+
+        string solver()
+        {
+            if (radioButton1.Checked) return @"cuda\\dnn_face_recognition_ex.exe";
+            if (radioButton2.Checked) return @"cpu\\dnn_face_recognition_ex.exe";
+            if (radioButton3.Checked) return @"cpu\\dnn_face_recognition_ex_MKL.exe";
+
+            return @"cpu\\dnn_face_recognition_ex.exe";
+        }
+
+        string detector()
+        {
+            if (radioButton6.Checked) return "--dnn_face_detect 0";
+            if (radioButton5.Checked) return "--dnn_face_detect 1";
+            if (radioButton4.Checked) return "--dnn_face_detect 2";
+
+            return "--dnn_face_detect 0";
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
+            button1.Enabled = false;    //camera
+            button2.Enabled = true;     //stop
+            button3.Enabled = false;    //movie
+            button4.Enabled = false;    //image
+            button5.Enabled = false;    //add user
+
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
             app = new System.Diagnostics.ProcessStartInfo();
 
             clear();
 
-            app.FileName = @"cuda\\dnn_face_recognition_ex.exe";
+            app.FileName = solver();
             app.Arguments = " " + "--no_show 1";
+            app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + detector();
             app.Arguments += " " + "--camID " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + detector();
             app.Arguments += " " + "--recog";
             app.UseShellExecute = true;
             app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
@@ -131,6 +191,12 @@ namespace face_recognition
 
         private void button2_Click(object sender, EventArgs e)
         {
+            button1.Enabled = true;    //camera
+            button2.Enabled = false;     //stop
+            button3.Enabled = true;    //movie
+            button4.Enabled = true;    //image
+            button5.Enabled = true;    //add user
+
             string filename = cuDir + "\\break.run";
             try
             {
@@ -138,7 +204,8 @@ namespace face_recognition
                 {
                     System.IO.File.Delete(filename);
                 }
-                System.IO.File.Create(filename);
+                var f = System.IO.File.Create(filename);
+                f.Close();
                 //await System.Threading.Tasks.Task.Delay(2000);
                 System.Threading.Thread.Sleep(2000);
             }
@@ -153,14 +220,23 @@ namespace face_recognition
             {
                 return;
             }
+
+            button1.Enabled = false;    //camera
+            button2.Enabled = true;     //stop
+            button3.Enabled = false;    //movie
+            button4.Enabled = false;    //image
+            button5.Enabled = false;    //add user
+
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
             app = new System.Diagnostics.ProcessStartInfo();
 
             clear();
 
-            app.FileName = @"cuda\\dnn_face_recognition_ex.exe";
+            app.FileName = solver();
             app.Arguments = " " + "--no_show 1";
+            app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + detector();
             app.Arguments += " " + "--video";
             app.Arguments += " " + openFileDialog1.FileName;
             app.Arguments += " " + "--recog";
@@ -178,6 +254,13 @@ namespace face_recognition
             {
                 return;
             }
+
+            button1.Enabled = false;    //camera
+            button2.Enabled = true;     //stop
+            button3.Enabled = false;    //movie
+            button4.Enabled = false;    //image
+            button5.Enabled = false;    //add user
+
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
             app = new System.Diagnostics.ProcessStartInfo();
@@ -190,8 +273,10 @@ namespace face_recognition
             }
             pictureBox1.Image = null;
 
-            app.FileName = @"cuda\\dnn_face_recognition_ex.exe";
+            app.FileName = solver();
             app.Arguments = " " + "--no_show 1";
+            app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + detector();
             app.Arguments += " " + "--image";
             app.Arguments += " " + openFileDialog2.FileName;
             app.UseShellExecute = true;
@@ -210,7 +295,11 @@ namespace face_recognition
                 }
                 catch { }
             }
-
+            button1.Enabled = true;    //camera
+            button2.Enabled = false;     //stop
+            button3.Enabled = true;    //movie
+            button4.Enabled = true;    //image
+            button5.Enabled = true;    //add user
         }
 
         private void button5_Click(object sender, EventArgs e)
@@ -219,6 +308,12 @@ namespace face_recognition
             {
                 return;
             }
+            button1.Enabled = false;    //camera
+            button2.Enabled = true;     //stop
+            button3.Enabled = false;    //movie
+            button4.Enabled = false;    //image
+            button5.Enabled = true;    //add user
+
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
             app = new System.Diagnostics.ProcessStartInfo();
@@ -231,14 +326,26 @@ namespace face_recognition
             }
             pictureBox1.Image = null;
 
-            app.FileName = @"cuda\\dnn_face_recognition_ex.exe";
-            app.Arguments = " " + openFileDialog2.FileName;
+            app.FileName = solver();
+            app.Arguments = " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + openFileDialog2.FileName;
             app.UseShellExecute = false;
 
             timer1.Stop();
             pictureBox1.Image = CreateImage(openFileDialog2.FileName);
             process = System.Diagnostics.Process.Start(app);
             process.WaitForExit();
+
+            button1.Enabled = true;    //camera
+            button2.Enabled = false;     //stop
+            button3.Enabled = true;    //movie
+            button4.Enabled = true;    //image
+            button5.Enabled = true;    //add user
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            processClose(process);
         }
     }
 }

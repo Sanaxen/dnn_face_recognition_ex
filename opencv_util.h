@@ -106,7 +106,7 @@ namespace opencv_util
 		double ratio = ((double)width / (double)big_width);
 
 		cv::Mat convert_mat;
-		cv::resize(target_mat, convert_mat, cv::Size(), ratio, ratio, cv::INTER_NEAREST);
+		cv::resize(target_mat, convert_mat, cv::Size(), ratio, ratio, cv::INTER_CUBIC);
 
 		cv::Mat Roi1(work_mat, cv::Rect((width - convert_mat.cols) / 2, (width - convert_mat.rows) / 2,
 			convert_mat.cols, convert_mat.rows));

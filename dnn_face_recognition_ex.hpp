@@ -32,6 +32,8 @@ using namespace std;
 #define UNKNOWON_FACE_ID	-1
 #define UNKNOWON_FACE_NAME "unknowon"
 
+#define CHK_FACE_IMAGE_SIZE	300
+#define GAP_DELTA_SIZE		8
 // ----------------------------------------------------------------------------------------
 
 template <long num_filters, typename SUBNET> using con5d = con<num_filters, 5, 5, 2, 2, SUBNET>;
@@ -236,8 +238,16 @@ inline std::string getUserName(const char* name)
 	return std::string(_name);
 }
 
-
-bool running_break()
+inline void running_break_clear()
+{
+	FILE* fp = fopen("break.run", "r");
+	if (fp)
+	{
+		fclose(fp);
+		remove("break.run");
+	}
+}
+inline bool running_break()
 {
 	FILE* fp = fopen("break.run", "r");
 	if (fp)
@@ -573,11 +583,11 @@ inline std::vector<image_window::overlay_circle> render_face_detections2(
 			circles.push_back(image_window::overlay_circle(d.part(30), 4, color));
 
 			int xv = d.part(30).x() - d.part(27).x();
-			if (std::abs(xv) > 14)
+			if (std::abs(xv) > 4* GAP_DELTA_SIZE)
 			{
 				printf("Please straighten your face\n");
 				image_error = -1;
-				if (std::abs(xv) > 20)
+				if (std::abs(xv) > 6* GAP_DELTA_SIZE)
 				{
 					image_error = -2;
 				}
@@ -585,20 +595,20 @@ inline std::vector<image_window::overlay_circle> render_face_detections2(
 
 			int xv1 = d.part(0).x() - d.part(36).x();
 			int xv2 = d.part(45).x() - d.part(16).x();
-			if (std::abs(xv1 - xv2) > 25)
+			if (std::abs(xv1 - xv2) > 4* GAP_DELTA_SIZE)
 			{
 				printf("Please straighten your face\n");
 				image_error = -3;
 			}
 			xv1 = d.part(3).x() - d.part(48).x();
 			xv2 = d.part(54).x() - d.part(13).x();
-			if (std::abs(xv1 - xv2) > 25)
+			if (std::abs(xv1 - xv2) > 4* GAP_DELTA_SIZE)
 			{
 				printf("Please straighten your face\n");
 				image_error = -4;
 			}
 			xv1 = d.part(62).y() - d.part(66).y();
-			if (std::abs(xv1) > 10)
+			if (std::abs(xv1) > 2* GAP_DELTA_SIZE)
 			{
 				printf("Please close your mouth\n");
 				image_error = -5;
@@ -624,7 +634,7 @@ inline std::vector<image_window::overlay_circle> render_face_detections2(
 			circles.push_back(image_window::overlay_circle(p, 4, color));
 			float d2 = std::abs(p.x() - d.part(16).x());
 
-			if (fabs(d1 - d2) > 50)
+			if (fabs(d1 - d2) > 5* GAP_DELTA_SIZE)
 			{
 				printf("Please make your face front\n");
 				image_error = -6;
@@ -642,13 +652,16 @@ inline std::vector<image_window::overlay_circle> render_face_detections2(
 	}
 	return circles;
 }
-inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_predictor sp68)
+inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_predictor sp68, cv::Mat& out)
 {
 	if (!dnn_face_recognition_::one_person) return true;
 	if (!dnn_face_recognition_::face_chk) return true;
 
+	cv::Mat face_tmp = face.clone();
+	opencv_util::resize_padd(face_tmp, CHK_FACE_IMAGE_SIZE);
+
 	dlib::array2d<bgr_pixel> img;
-	assign_image(img, cv_image<bgr_pixel>(face));
+	assign_image(img, cv_image<bgr_pixel>(face_tmp));
 
 	std::vector<rectangle> dets = detector(img);
 	if (dets.size() == 0) return false;
@@ -658,9 +671,27 @@ inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_
 	if (shapes.size() != 1) return false;
 
 	int error_code;
-	render_face_detections2(shapes, error_code);
+	std::vector<image_window::overlay_circle>& circle = render_face_detections2(shapes, error_code);
+
+#if 10
+	{
+		draw_face(face_tmp, dets[0], render_face_detections(shapes), circle);
+		if (error_code != 0)
+		{
+			cv::cvtColor(face_tmp, face_tmp, CV_RGB2BGR);
+			out = face_tmp.clone();
+			//cv::imshow("", out);
+			//cv::waitKey(10000);
+		}
+	}
+#endif
 
 	return (error_code == 0);
+}
+inline bool face_dir_check(matrix<rgb_pixel>& img, frontal_face_detector detector, shape_predictor sp68, cv::Mat& out)
+{
+	cv::Mat face = toMat(img).clone();
+	return face_dir_check(face, detector, sp68, out);
 }
 
 inline float distance(const std::vector<float>& v1, const std::vector<float>& v2)
@@ -1053,7 +1084,8 @@ inline std::vector<int> webcam_face_recognition(face_recognition_str& face_recog
 					count++;
 					continue;
 				}
-				if (!face_dir_check(temp, face_recog_image.detector, face_recog_image.sp68))
+				cv::Mat errorImg;
+				if (!face_dir_check(temp, face_recog_image.detector, face_recog_image.sp68, errorImg))
 				{
 					printf("You are not facing the front or you can see multiple people.\n");
 					count++;
@@ -1140,17 +1172,34 @@ inline std::string webcam_face_recognition(int camID = 0)
 	}
 }
 
-inline int make_shape(face_recognition_str fr)
+inline int make_shape(face_recognition_str& fr)
 {
 	std::vector<std::string> imagelist;
 	if (fr.get_imagelist(imagelist) < 0) return -1;
 
 	printf("imagelist:%d\n", imagelist.size());
+	const size_t sz = imagelist.size();
 
-	for (int id = 0; id < imagelist.size(); id++)
+//#pragma omp parallel for
+	for (int id = 0; id < sz; id++)
 	{
 		matrix<rgb_pixel> img;
 		load_image(img, imagelist[id]);
+
+		cv::Mat error_img;
+		if (!face_dir_check(img, fr.detector, fr.sp68, error_img))
+		{
+			printf("not facing the front or you can see multiple people\n");
+			if (error_img.empty())
+			{
+				dlib::save_png(img, std::string("tmp/error_face_image_") + to_string(id) + ".png");
+			}
+			else
+			{
+				cv::imwrite(std::string("tmp/error_face_image_") + to_string(id) + ".png", error_img);
+			}
+			continue;
+		}
 
 		std::vector<matrix<rgb_pixel>> faces;
 		for (auto face : fr.detector(img))
@@ -1221,7 +1270,7 @@ inline int make_shape(face_recognition_str fr)
 		//cout << "face descriptor for one face: " << trans(face_descriptors[0]) << endl;
 
 		matrix<float, 0, 1> face_descriptor = mean(mat(fr.net(jitter_image(faces[0]))));
-		cout << "jittered face descriptor for one face: " << trans(face_descriptor) << endl;
+		//cout << "jittered face descriptor for one face: " << trans(face_descriptor) << endl;
 
 		char user_shape[256];
 		sprintf(user_shape, "user_shape/%s.txt", filename.c_str());
@@ -1235,13 +1284,6 @@ inline int make_shape(face_recognition_str fr)
 			{
 				fprintf(fp, "%f\n", t(i));
 			}
-			//for (int i = 0; i < t.nc(); i++)
-			//{
-			//	for (int j = 0; j < t.nr(); j++)
-			//	{
-			//		fprintf(fp, "%f\n", t(i, j));
-			//	}
-			//}
 			fclose(fp);
 		}
 	}

@@ -18,7 +18,7 @@ int main(int argc, char** argv) try
 		printf("%s args\n", argv[0]);
 		printf("args:\n");
 		printf("============ parameter option ===========\n");
-		printf("--face_chek [0|1]\n");
+		printf("--face_chk [0|1]\n");
 		printf("        0: no check  1:Inspect if it is straight in front\n");
 		printf("--t value\n");
 		printf("        value=Collation judgment threshold(default 0.2)\n");
@@ -111,21 +111,40 @@ int main(int argc, char** argv) try
 			}
 		}
 	}
-	printf("camID= %d\n", camID);
+	printf("--camID           -> %d\n", camID);
+	printf("--face_chk        -> %d\n", dnn_face_recognition_::face_chk);
+	printf("--t               -> %f\n", dnn_face_recognition_::collation_judgmentthreshold);
+	printf("--one_person      -> %d\n", dnn_face_recognition_::one_person);
+	printf("--video           -> %s\n", dnn_face_recognition_::video_file.c_str());
+	printf("--num_jitters     -> %d\n", dnn_face_recognition_::num_jitters);
+	printf("--dnn_face_detect -> %d\n", dnn_face_recognition_::dnn_face_detection);
 
 	for (int k = 1; k < argc; k++)
 	{
 		if (std::string(argv[k]) == "--m")
 		{
+			running_break_clear();
 			clear_tmp_img();
 			printf("make_shape\n");
 			face_recognition_str fr;
-			printf("%d\n", make_shape(fr));
+			try
+			{
+				printf("%d\n", make_shape(fr));
+			}
+			catch (std::exception& e)
+			{
+				cout << e.what() << endl;
+			}
+			catch (...)
+			{
+				cout << "exception error" << endl;
+			}
 			end_tmp_img();
 			exit(0);
 		}
 		if (std::string(argv[k]) == "--cap")
 		{
+			running_break_clear();
 			clear_tmp_img();
 			char* user_name = "";
 			if (argc > k+1) user_name = argv[k+1];
@@ -144,6 +163,7 @@ int main(int argc, char** argv) try
 		if (std::string(argv[k]) == "--recog")
 		{
 			do {
+				running_break_clear();
 				clear_tmp_img();
 
 				face_recognition_str fr;
@@ -164,8 +184,8 @@ int main(int argc, char** argv) try
 					}
 				}
 				end_tmp_img();
-				cout << "press any key to continue.." << endl;
-				cin.get();
+				//cout << "press any key to continue.." << endl;
+				//cin.get();
 			} while (1);
 			exit(0);
 		}
@@ -173,6 +193,7 @@ int main(int argc, char** argv) try
 		if (std::string(argv[k]) == "--image")
 		{
 			dnn_face_recognition_::tracking = false;
+			running_break_clear();
 			clear_tmp_img();
 
 			face_recognition_str fr;
@@ -182,7 +203,8 @@ int main(int argc, char** argv) try
 			}
 			fr.face_image = cv::imread(argv[k+1]);
 
-			if (!face_dir_check(fr.face_image, fr.detector, fr.sp68))
+			cv::Mat errorImg;
+			if (!face_dir_check(fr.face_image, fr.detector, fr.sp68, errorImg))
 			{
 				printf("You are not facing the front or you can see multiple people.\n");
 				end_tmp_img();
@@ -252,6 +274,7 @@ int main(int argc, char** argv) try
 		if (std::string(argv[k]) == "--vector")
 		{
 			dnn_face_recognition_::tracking = false;
+			running_break_clear();
 			clear_tmp_img();
 
 			face_recognition_str fr;
@@ -328,6 +351,7 @@ int main(int argc, char** argv) try
 		{
 			dnn_face_recognition_::tracking = false;
 			dnn_face_recognition_::one_person = true;
+			running_break_clear();
 			clear_tmp_img();
 
 			face_recognition_str fr;
@@ -362,9 +386,10 @@ int main(int argc, char** argv) try
 					{
 						continue;
 					}
-					if (!face_dir_check(fr.face_image, fr.detector, fr.sp68))
+					cv::Mat errorImg;
+					if (!face_dir_check(fr.face_image, fr.detector, fr.sp68, errorImg))
 					{
-						printf("You are not facing the front or you can see multiple people.\n");
+						printf("You are not facing the front or you can see multiple people.\n");					
 						cv::imwrite("tmp/error_" + std::to_string(i) + " .png", fr.face_image);
 						continue;
 					}
