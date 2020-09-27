@@ -155,6 +155,7 @@ namespace face_recognition
             app.FileName = solver();
             app.Arguments = " " + "--no_show 1";
             app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + "--t " + textBox1.Text.ToString();
             app.Arguments += " " + detector();
             app.Arguments += " " + "--camID " + numericUpDown1.Value.ToString();
             app.Arguments += " " + detector();
@@ -245,6 +246,7 @@ namespace face_recognition
             app.FileName = solver();
             app.Arguments = " " + "--no_show 1";
             app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + "--t " + textBox1.Text.ToString();
             app.Arguments += " " + detector();
             app.Arguments += " " + "--video";
             app.Arguments += " " + openFileDialog1.FileName;
@@ -285,6 +287,7 @@ namespace face_recognition
             app.FileName = solver();
             app.Arguments = " " + "--no_show 1";
             app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + "--t " + textBox1.Text.ToString();
             app.Arguments += " " + detector();
             app.Arguments += " " + "--image";
             app.Arguments += " " + openFileDialog2.FileName;
