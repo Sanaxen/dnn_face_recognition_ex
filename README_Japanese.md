@@ -1,5 +1,9 @@
 # dnn_face_recognition_ex  
 
+
+## C# GUI example
+<img src="./images/image09.png"/>  
+
 ### ほとんどすべての人を正しく識別しました。..  <img src="./images/output.png"/>  
 しきい値は0.31です。これはあまり良い値ではありません。
 Bruce_WillisはJose_Dirceu、Jean_Charestと間違えられました。
