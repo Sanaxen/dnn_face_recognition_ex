@@ -27,6 +27,8 @@
 using namespace dlib;
 using namespace std;
 
+//#define USE_LANDMARK68
+
 #define NUM_JITTERS			100
 #define FEATURE_VECTOR_DIM	128
 #define UNKNOWON_FACE_ID	-1
@@ -298,23 +300,22 @@ inline void clear_tmp_img()
 	{
 		fclose(fp);
 #ifdef _WIN64
-		sprintf(buf, "tmp\\end_image", image_count);
+		remove("tmp\\end_image");
 #else
-		sprintf(buf, "tmp/end_image", image_count);
+		remove("tmp/end_image");
 #endif
 	}
 }
 inline void end_tmp_img()
 {
 #ifdef _WIN64
-	FILE* fp = fopen("tmp\\end_image", "r");
+	FILE* fp = fopen("tmp\\end_image", "w");
 #else
-	FILE* fp = fopen("tmp/end_image", "r");
+	FILE* fp = fopen("tmp/end_image", "w");
 #endif
 	if (fp)
 	{
 		fclose(fp);
-		remove("tmp/end_image");
 	}
 }
 
@@ -355,8 +356,11 @@ public:
 		detector = get_frontal_face_detector();
 		deserialize("model/shape_predictor_5_face_landmarks.dat") >> sp;
 		deserialize("model/dlib_face_recognition_resnet_model_v1.dat") >> net;
+#ifdef USE_LANDMARK68
 		deserialize("model/shape_predictor_68_face_landmarks.dat") >> sp68;
-
+#else
+		deserialize("model/shape_predictor_5_face_landmarks.dat") >> sp68;
+#endif
 		if (dnn_face_recognition_::dnn_face_detection == 1)
 		{
 			deserialize("model/mmod_human_face_detector.dat") >> detect_net;
@@ -563,7 +567,7 @@ inline std::vector<image_window::overlay_circle> render_face_detections2(
 	std::vector<image_window::overlay_circle> circles;
 	for (unsigned long i = 0; i < dets.size(); ++i)
 	{
-		if (dets[i].num_parts() != 68)
+		if (dets[i].num_parts() != 68 && dets[i].num_parts() != 5)
 		{
 			image_error = -1;
 			return std::vector<image_window::overlay_circle>();
@@ -571,6 +575,7 @@ inline std::vector<image_window::overlay_circle> render_face_detections2(
 
 		const full_object_detection& d = dets[i];
 
+#ifdef USE_LANDMARK68
 		{
 			//// Around Chin. Ear to Ear
 			circles.push_back(image_window::overlay_circle(d.part(0), 2, color));
@@ -649,12 +654,58 @@ inline std::vector<image_window::overlay_circle> render_face_detections2(
 			p = p / 7.0;
 			circles.push_back(image_window::overlay_circle(p, 4, color));
 		}
+#else
+		circles.push_back(image_window::overlay_circle(d.part(0), 4, color));
+		circles.push_back(image_window::overlay_circle(d.part(1), 4, color));
+		circles.push_back(image_window::overlay_circle(d.part(2), 4, color));
+		circles.push_back(image_window::overlay_circle(d.part(3), 4, color));
+		circles.push_back(image_window::overlay_circle(d.part(4), 4, color));
+
+		dlib::point p = d.part(1)+ d.part(3);
+		p = p / 2.0;
+
+		circles.push_back(image_window::overlay_circle(p, 4, color));
+		
+		float d1 = std::abs(p.x() - d.part(4).x());
+
+		if (fabs(d1) > 2 * GAP_DELTA_SIZE)
+		{
+			printf("Please make your face front\n");
+			image_error = -1;
+		}
+		
+		d1 = std::abs(d.part(0).y() - d.part(2).y());
+
+		if (fabs(d1) > 2 * GAP_DELTA_SIZE)
+		{
+			printf("Please make your face front\n");
+			image_error = -1;
+		}
+
+		float d2 = std::abs(d.part(4).x() - d.part(3).x());
+		float d3 = std::abs(d.part(4).x() - d.part(1).x());
+
+		if (fabs(d3-d2) > 2 * GAP_DELTA_SIZE)
+		{
+			printf("Please make your face front\n");
+			image_error = -1;
+		}
+
+		d2 = std::abs(d.part(2).x() - d.part(3).x());
+		d3 = std::abs(d.part(0).x() - d.part(1).x());
+
+		if (fabs(d3 - d2) > 2 * GAP_DELTA_SIZE)
+		{
+			printf("Please make your face front\n");
+			image_error = -1;
+		}
+#endif
 	}
 	return circles;
 }
 inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_predictor sp68, cv::Mat& out)
 {
-	if (!dnn_face_recognition_::one_person) return true;
+	//if (!dnn_face_recognition_::one_person) return true;
 	if (!dnn_face_recognition_::face_chk) return true;
 
 	cv::Mat face_tmp = face.clone();
@@ -668,24 +719,31 @@ inline bool face_dir_check(cv::Mat& face, frontal_face_detector detector, shape_
 
 	std::vector<full_object_detection> shapes = face_shape_predictor(img, dets, sp68);
 	cout << shapes.size() << endl;
-	if (shapes.size() != 1) return false;
 
-	int error_code;
-	std::vector<image_window::overlay_circle>& circle = render_face_detections2(shapes, error_code);
+
+	int error_code = 0;
+	for (int i = 0; i < shapes.size(); i++)
+	{
+		int one_error_code = 0;
+		std::vector<full_object_detection> one_shape;
+		one_shape.push_back(shapes[i]);
+		std::vector<image_window::overlay_circle>& circle = render_face_detections2(one_shape, one_error_code);
 
 #if 10
-	{
-		draw_face(face_tmp, dets[0], render_face_detections(shapes), circle);
-		if (error_code != 0)
 		{
-			cv::cvtColor(face_tmp, face_tmp, CV_RGB2BGR);
-			out = face_tmp.clone();
-			//cv::imshow("", out);
-			//cv::waitKey(10000);
+			draw_face(face_tmp, dets[i], render_face_detections(one_shape), circle);
+			if (one_error_code != 0)
+			{
+				error_code++;
+			}
 		}
-	}
 #endif
+	}
+	cv::cvtColor(face_tmp, face_tmp, CV_RGB2BGR);
+	out = face_tmp.clone();
 
+	//return false;
+	if (shapes.size() > 1 && dnn_face_recognition_::one_person) return false;
 	return (error_code == 0);
 }
 inline bool face_dir_check(matrix<rgb_pixel>& img, frontal_face_detector detector, shape_predictor sp68, cv::Mat& out)
@@ -1329,8 +1387,11 @@ inline int cam2face_shape(char* user, int camID = 0)
 	{
 		frontal_face_detector detector = get_frontal_face_detector();
 		shape_predictor sp68;
+#ifdef USE_LANDMARK68
 		deserialize("model/shape_predictor_68_face_landmarks.dat") >> sp68;
-
+#else
+		deserialize("model/shape_predictor_5_face_landmarks.dat") >> sp68;
+#endif
 		cv::VideoCapture cap;
 
 		if (dnn_face_recognition_::video_file != "")

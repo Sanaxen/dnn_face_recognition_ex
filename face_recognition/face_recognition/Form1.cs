@@ -187,6 +187,15 @@ namespace face_recognition
                 }
                 catch { }
             }
+            if (System.IO.File.Exists("tmp\\end_image"))
+            {
+                timer1.Stop();
+                button1.Enabled = true;    //camera
+                button2.Enabled = false;     //stop
+                button3.Enabled = true;    //movie
+                button4.Enabled = true;    //image
+                button5.Enabled = true;    //add user
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -346,6 +355,11 @@ namespace face_recognition
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             processClose(process);
+        }
+
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+
         }
     }
 }
