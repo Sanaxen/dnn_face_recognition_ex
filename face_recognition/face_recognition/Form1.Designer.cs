@@ -55,6 +55,8 @@
             this.splitter2 = new System.Windows.Forms.Splitter();
             this.panel2 = new System.Windows.Forms.Panel();
             this.splitter1 = new System.Windows.Forms.Splitter();
+            this.label3 = new System.Windows.Forms.Label();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
@@ -91,6 +93,8 @@
             // 
             // panel3
             // 
+            this.panel3.Controls.Add(this.textBox1);
+            this.panel3.Controls.Add(this.label3);
             this.panel3.Controls.Add(this.label2);
             this.panel3.Controls.Add(this.numericUpDown2);
             this.panel3.Controls.Add(this.groupBox2);
@@ -112,7 +116,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(511, 31);
+            this.label2.Location = new System.Drawing.Point(511, 9);
             this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(79, 15);
@@ -121,8 +125,8 @@
             // 
             // numericUpDown2
             // 
-            this.numericUpDown2.Location = new System.Drawing.Point(603, 31);
-            this.numericUpDown2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.numericUpDown2.Location = new System.Drawing.Point(611, 9);
+            this.numericUpDown2.Margin = new System.Windows.Forms.Padding(4);
             this.numericUpDown2.Name = "numericUpDown2";
             this.numericUpDown2.Size = new System.Drawing.Size(68, 22);
             this.numericUpDown2.TabIndex = 10;
@@ -133,9 +137,9 @@
             this.groupBox2.Controls.Add(this.radioButton5);
             this.groupBox2.Controls.Add(this.radioButton6);
             this.groupBox2.Location = new System.Drawing.Point(256, 9);
-            this.groupBox2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
             this.groupBox2.Size = new System.Drawing.Size(247, 59);
             this.groupBox2.TabIndex = 9;
             this.groupBox2.TabStop = false;
@@ -145,7 +149,7 @@
             // 
             this.radioButton4.AutoSize = true;
             this.radioButton4.Location = new System.Drawing.Point(176, 22);
-            this.radioButton4.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.radioButton4.Margin = new System.Windows.Forms.Padding(4);
             this.radioButton4.Name = "radioButton4";
             this.radioButton4.Size = new System.Drawing.Size(58, 19);
             this.radioButton4.TabIndex = 2;
@@ -156,7 +160,7 @@
             // 
             this.radioButton5.AutoSize = true;
             this.radioButton5.Location = new System.Drawing.Point(93, 22);
-            this.radioButton5.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.radioButton5.Margin = new System.Windows.Forms.Padding(4);
             this.radioButton5.Name = "radioButton5";
             this.radioButton5.Size = new System.Drawing.Size(70, 19);
             this.radioButton5.TabIndex = 1;
@@ -168,7 +172,7 @@
             this.radioButton6.AutoSize = true;
             this.radioButton6.Checked = true;
             this.radioButton6.Location = new System.Drawing.Point(8, 22);
-            this.radioButton6.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.radioButton6.Margin = new System.Windows.Forms.Padding(4);
             this.radioButton6.Name = "radioButton6";
             this.radioButton6.Size = new System.Drawing.Size(71, 19);
             this.radioButton6.TabIndex = 0;
@@ -182,9 +186,9 @@
             this.groupBox1.Controls.Add(this.radioButton2);
             this.groupBox1.Controls.Add(this.radioButton1);
             this.groupBox1.Location = new System.Drawing.Point(23, 9);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
             this.groupBox1.Size = new System.Drawing.Size(225, 59);
             this.groupBox1.TabIndex = 8;
             this.groupBox1.TabStop = false;
@@ -194,7 +198,7 @@
             // 
             this.radioButton3.AutoSize = true;
             this.radioButton3.Location = new System.Drawing.Point(92, 22);
-            this.radioButton3.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.radioButton3.Margin = new System.Windows.Forms.Padding(4);
             this.radioButton3.Name = "radioButton3";
             this.radioButton3.Size = new System.Drawing.Size(49, 19);
             this.radioButton3.TabIndex = 2;
@@ -205,7 +209,7 @@
             // 
             this.radioButton2.AutoSize = true;
             this.radioButton2.Location = new System.Drawing.Point(163, 22);
-            this.radioButton2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.radioButton2.Margin = new System.Windows.Forms.Padding(4);
             this.radioButton2.Name = "radioButton2";
             this.radioButton2.Size = new System.Drawing.Size(51, 19);
             this.radioButton2.TabIndex = 1;
@@ -217,7 +221,7 @@
             this.radioButton1.AutoSize = true;
             this.radioButton1.Checked = true;
             this.radioButton1.Location = new System.Drawing.Point(8, 22);
-            this.radioButton1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.radioButton1.Margin = new System.Windows.Forms.Padding(4);
             this.radioButton1.Name = "radioButton1";
             this.radioButton1.Size = new System.Drawing.Size(58, 19);
             this.radioButton1.TabIndex = 0;
@@ -338,6 +342,24 @@
             this.splitter1.TabIndex = 6;
             this.splitter1.TabStop = false;
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(560, 40);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(66, 15);
+            this.label3.TabIndex = 12;
+            this.label3.Text = "threshold";
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(633, 37);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(46, 22);
+            this.textBox1.TabIndex = 13;
+            this.textBox1.Text = "0.2";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
@@ -392,6 +414,8 @@
         private System.Windows.Forms.RadioButton radioButton6;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.NumericUpDown numericUpDown2;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Label label3;
     }
 }
 
