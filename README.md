@@ -1,6 +1,10 @@
 # dnn_face_recognition_ex  
 You can also read a translated version of this file in [Japanese 日本語](https://github.com/Sanaxen/dnn_face_recognition_ex/blob/master/README_Japanese.md).
 
+## C# GUI example
+<img src="./images/image09.png"/>  
+
+
 ### identified people correctly in almost everything..  <img src="./images/output.png"/>  
 the threshold is 0.31.This is not a very good value.  
 Bruce_Willis was mistaken for Jose_Dirceu, Jean_Charest.
