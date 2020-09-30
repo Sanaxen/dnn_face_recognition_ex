@@ -29,6 +29,9 @@ namespace face_recognition
             button3.Enabled = true;    //movie
             button4.Enabled = true;    //image
             button5.Enabled = true;    //add user
+            button6.Enabled = false;    //movie
+            button7.Enabled = false;    //image
+            pictureBox1.AllowDrop = true;
         }
 
         public static System.Drawing.Image CreateImage(string filename)
@@ -63,7 +66,8 @@ namespace face_recognition
                 button3.Enabled = true;    //movie
                 button4.Enabled = true;    //image
                 button5.Enabled = true;    //add user
-
+                button6.Enabled = true;    //movie
+                button7.Enabled = true;    //image
             }
             string filename = cuDir + "\\break.run";
             try
@@ -145,6 +149,8 @@ namespace face_recognition
             button3.Enabled = false;    //movie
             button4.Enabled = false;    //image
             button5.Enabled = false;    //add user
+            button6.Enabled = false;    //movie
+            button7.Enabled = false;    //image
 
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
@@ -196,6 +202,8 @@ namespace face_recognition
                 button3.Enabled = true;    //movie
                 button4.Enabled = true;    //image
                 button5.Enabled = true;    //add user
+                button6.Enabled = true;    //movie
+                button7.Enabled = true;    //image
             }
         }
 
@@ -206,6 +214,8 @@ namespace face_recognition
             button3.Enabled = true;    //movie
             button4.Enabled = true;    //image
             button5.Enabled = true;    //add user
+            button6.Enabled = true;    //movie
+            button7.Enabled = true;    //image
 
             string filename = cuDir + "\\break.run";
             try
@@ -230,33 +240,7 @@ namespace face_recognition
             {
                 return;
             }
-
-            button1.Enabled = false;    //camera
-            button2.Enabled = true;     //stop
-            button3.Enabled = false;    //movie
-            button4.Enabled = false;    //image
-            button5.Enabled = false;    //add user
-
-            System.IO.Directory.SetCurrentDirectory(cuDir);
-            pictureBox1.Image = null;
-            app = new System.Diagnostics.ProcessStartInfo();
-
-            clear();
-
-            app.FileName = solver();
-            app.Arguments = " " + "--no_show 1";
-            app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
-            app.Arguments += " " + "--t " + textBox1.Text.ToString();
-            app.Arguments += " " + detector();
-            app.Arguments += " " + "--video";
-            app.Arguments += " " + openFileDialog1.FileName;
-            app.Arguments += " " + "--recog";
-            app.UseShellExecute = true;
-            app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
-
-            timer1.Start();
-            process = System.Diagnostics.Process.Start(app);
-
+            button6_Click(sender, e);
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -265,53 +249,7 @@ namespace face_recognition
             {
                 return;
             }
-
-            button1.Enabled = false;    //camera
-            button2.Enabled = true;     //stop
-            button3.Enabled = false;    //movie
-            button4.Enabled = false;    //image
-            button5.Enabled = false;    //add user
-
-            System.IO.Directory.SetCurrentDirectory(cuDir);
-            pictureBox1.Image = null;
-            app = new System.Diagnostics.ProcessStartInfo();
-
-            clear();
-            string filename = cuDir + "\\output.png";
-            if (System.IO.File.Exists(filename))
-            { 
-                System.IO.File.Delete(filename);
-            }
-            pictureBox1.Image = null;
-
-            app.FileName = solver();
-            app.Arguments = " " + "--no_show 1";
-            app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
-            app.Arguments += " " + "--t " + textBox1.Text.ToString();
-            app.Arguments += " " + detector();
-            app.Arguments += " " + "--image";
-            app.Arguments += " " + openFileDialog2.FileName;
-            app.UseShellExecute = true;
-            app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
-
-            timer1.Stop();
-            process = System.Diagnostics.Process.Start(app);
-            process.WaitForExit();
-
-            if (System.IO.File.Exists(filename))
-            {
-                try
-                {
-                    var tmp = pictureBox1.Image;
-                    pictureBox1.Image = CreateImage(filename);
-                }
-                catch { }
-            }
-            button1.Enabled = true;    //camera
-            button2.Enabled = false;     //stop
-            button3.Enabled = true;    //movie
-            button4.Enabled = true;    //image
-            button5.Enabled = true;    //add user
+            button7_Click(sender, e);
         }
 
         private void button5_Click(object sender, EventArgs e)
@@ -325,6 +263,8 @@ namespace face_recognition
             button3.Enabled = false;    //movie
             button4.Enabled = false;    //image
             button5.Enabled = true;    //add user
+            button6.Enabled = false;    //movie
+            button7.Enabled = false;    //image
 
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
@@ -353,6 +293,8 @@ namespace face_recognition
             button3.Enabled = true;    //movie
             button4.Enabled = true;    //image
             button5.Enabled = true;    //add user
+            button6.Enabled = false;    //movie
+            button7.Enabled = false;    //image
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -363,6 +305,142 @@ namespace face_recognition
         private void timer2_Tick(object sender, EventArgs e)
         {
 
+        }
+
+        private void toggleEffectsToDragEvent(DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                e.Effect = DragDropEffects.All;
+            else
+                e.Effect = DragDropEffects.None;
+        }
+        private string getFileNameToDragEvent(DragEventArgs e)
+        {
+            string[] fileName = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (System.IO.File.Exists(fileName[0]) == true)
+            {
+                return fileName[0];
+            }
+            else
+            {
+                return null;
+            }
+        }
+        private void pictureBox1_DragEnter(object sender, DragEventArgs e)
+        {
+            toggleEffectsToDragEvent(e);
+        }
+
+        private void pictureBox1_DragDrop(object sender, DragEventArgs e)
+        {
+            string fileName = this.getFileNameToDragEvent(e);
+            string ext = System.IO.Path.GetExtension(fileName);
+
+            if ( ext == ".png" || ext == ".jpg")
+            {
+                openFileDialog2.FileName = fileName;
+                button1.Enabled = false;    //camera
+                button2.Enabled = true;     //stop
+                button3.Enabled = false;    //movie
+                button4.Enabled = true;    //image
+                button5.Enabled = false;    //add user
+                button6.Enabled = false;    //movie
+                button7.Enabled = true;    //image
+            }
+            if (ext == ".mp4" || ext == ".avi")
+            {
+                openFileDialog1.FileName = fileName;
+                button1.Enabled = false;    //camera
+                button2.Enabled = true;     //stop
+                button3.Enabled = true;    //movie
+                button4.Enabled = false;    //image
+                button5.Enabled = false;    //add user
+                button6.Enabled = true;    //movie
+                button7.Enabled = false;    //image
+            }
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog1.FileName == "") return;
+            button1.Enabled = false;    //camera
+            button2.Enabled = true;     //stop
+            button3.Enabled = false;    //movie
+            button4.Enabled = false;    //image
+            button5.Enabled = false;    //add user
+
+            System.IO.Directory.SetCurrentDirectory(cuDir);
+            pictureBox1.Image = null;
+            app = new System.Diagnostics.ProcessStartInfo();
+
+            clear();
+
+            app.FileName = solver();
+            app.Arguments = " " + "--no_show 1";
+            app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + "--t " + textBox1.Text.ToString();
+            app.Arguments += " " + detector();
+            app.Arguments += " " + "--video";
+            app.Arguments += " " + "\""+openFileDialog1.FileName+"\"";
+            app.Arguments += " " + "--recog";
+            app.UseShellExecute = true;
+            app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+
+            timer1.Start();
+            process = System.Diagnostics.Process.Start(app);
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog2.FileName == "") return;
+            button1.Enabled = false;    //camera
+            button2.Enabled = true;     //stop
+            button3.Enabled = false;    //movie
+            button4.Enabled = false;    //image
+            button5.Enabled = false;    //add user
+
+            System.IO.Directory.SetCurrentDirectory(cuDir);
+            pictureBox1.Image = null;
+            app = new System.Diagnostics.ProcessStartInfo();
+
+            clear();
+            string filename = cuDir + "\\output.png";
+            if (System.IO.File.Exists(filename))
+            {
+                System.IO.File.Delete(filename);
+            }
+            pictureBox1.Image = null;
+
+            app.FileName = solver();
+            app.Arguments = " " + "--no_show 1";
+            app.Arguments += " " + "--num_gitters " + numericUpDown1.Value.ToString();
+            app.Arguments += " " + "--t " + textBox1.Text.ToString();
+            app.Arguments += " " + detector();
+            app.Arguments += " " + "--image";
+            app.Arguments += " " + "\"" + openFileDialog2.FileName + "\"";
+            app.UseShellExecute = true;
+            app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+
+            timer1.Stop();
+            process = System.Diagnostics.Process.Start(app);
+            process.WaitForExit();
+
+            if (System.IO.File.Exists(filename))
+            {
+                try
+                {
+                    var tmp = pictureBox1.Image;
+                    pictureBox1.Image = CreateImage(filename);
+                }
+                catch { }
+            }
+            button1.Enabled = true;    //camera
+            button2.Enabled = false;     //stop
+            button3.Enabled = true;    //movie
+            button4.Enabled = true;    //image
+            button5.Enabled = true;    //add user
+            button6.Enabled = true;    //movie
+            button7.Enabled = true;    //image
         }
     }
 }
