@@ -62,7 +62,7 @@ namespace face_recognition
                 process = null;
 
                 button1.Enabled = true;    //camera
-                button2.Enabled = false;     //stop
+                button2.Enabled = true;     //stop
                 button3.Enabled = true;    //movie
                 button4.Enabled = true;    //image
                 button5.Enabled = true;    //add user
@@ -167,7 +167,7 @@ namespace face_recognition
             app.Arguments += " " + detector();
             app.Arguments += " " + "--recog";
             app.UseShellExecute = true;
-            app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+            //app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
 
             timer1.Start();
             process = System.Diagnostics.Process.Start(app);
@@ -210,7 +210,7 @@ namespace face_recognition
         private void button2_Click(object sender, EventArgs e)
         {
             button1.Enabled = true;    //camera
-            button2.Enabled = false;     //stop
+            button2.Enabled = true;     //stop
             button3.Enabled = true;    //movie
             button4.Enabled = true;    //image
             button5.Enabled = true;    //add user
@@ -368,6 +368,8 @@ namespace face_recognition
             button3.Enabled = false;    //movie
             button4.Enabled = false;    //image
             button5.Enabled = false;    //add user
+            button6.Enabled = true;    //movie
+            button7.Enabled = false;    //image
 
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
@@ -384,7 +386,7 @@ namespace face_recognition
             app.Arguments += " " + "\""+openFileDialog1.FileName+"\"";
             app.Arguments += " " + "--recog";
             app.UseShellExecute = true;
-            app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+            //app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
 
             timer1.Start();
             process = System.Diagnostics.Process.Start(app);
@@ -398,6 +400,8 @@ namespace face_recognition
             button3.Enabled = false;    //movie
             button4.Enabled = false;    //image
             button5.Enabled = false;    //add user
+            button6.Enabled = false;    //movie
+            button7.Enabled = true;    //image
 
             System.IO.Directory.SetCurrentDirectory(cuDir);
             pictureBox1.Image = null;
@@ -419,7 +423,7 @@ namespace face_recognition
             app.Arguments += " " + "--image";
             app.Arguments += " " + "\"" + openFileDialog2.FileName + "\"";
             app.UseShellExecute = true;
-            app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+            //app.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
 
             timer1.Stop();
             process = System.Diagnostics.Process.Start(app);
